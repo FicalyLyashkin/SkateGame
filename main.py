@@ -1,24 +1,11 @@
-import pygame
 import random
-import os
 import sys
-
-WIDTH = 1300
-HEIGHT = 900
-FPS = 144
+from start import *
+from end import *
 
 pygame.init()
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 clock = pygame.time.Clock()
-
-
-def load_image(name, colorkey=None):
-    fullname = os.path.join('data', name)
-    if not os.path.isfile(fullname):
-        print(f"Файл с изображением '{fullname}' не найден")
-        sys.exit()
-    image = pygame.image.load(fullname)
-    return image
 
 
 class Obstacle(pygame.sprite.Sprite):
@@ -118,11 +105,12 @@ fence_speed = -13
 
 count_points = 0
 font = pygame.font.Font(None, 36)
-text_color = pygame.Color("yellow")
+text_color = pygame.Color("red")
 jump = False
 running = True
 count = 0
 count_ramp_hits = 0
+
 while running:
     clock.tick(FPS)
 
@@ -136,7 +124,9 @@ while running:
             elif event.key == pygame.K_s:
                 if player.rect.bottom < lanes_y[-1]:
                     player.rect.y += 200
-            elif event.key == pygame.K_c:
+            elif event.key == pygame.K_c and player.rect.y in [ \
+                    x - 50 for x in lanes_y
+            ]:
                 jump = True
 
     if jump:
@@ -144,7 +134,6 @@ while running:
             player.rect.y -= 55
         count += 1
         if count == 10:
-
             jump = False
             count = 0
     count_points += 1
@@ -155,7 +144,6 @@ while running:
         if random_obj == 1:
             lane_y = random.choice(lanes_y)
             obstacle = Obstacle(lane_y - 50)
-
             all_sprites.add(obstacle)
             obstacles.add(obstacle)
         elif random_obj == 2:
@@ -168,6 +156,7 @@ while running:
             ramp = Ramp(lane_y)
             all_sprites.add(ramp)
             ramps.add(ramp)
+
     background_x += background_speed
     city_x += city_speed
     fence_x += fence_speed
@@ -183,6 +172,8 @@ while running:
 
     hits = pygame.sprite.spritecollide(player, cones, False, pygame.sprite.collide_mask)
     if hits:
+        e = End()
+        End.end_screen(e)
         running = False
 
     screen.fill((0, 0, 0))
@@ -205,5 +196,6 @@ while running:
     clock.tick(FPS)
     all_sprites.draw(screen)
     pygame.display.flip()
+
 
 pygame.quit()
