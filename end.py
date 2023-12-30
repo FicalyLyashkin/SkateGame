@@ -30,7 +30,7 @@ class End:
             text_coord += intro_rect.height
             screen.blit(string_rendered, intro_rect)
         btn_coords = (WIDTH // 3, HEIGHT // 6)
-        pygame.draw.rect(screen, pygame.Color(153, 192, 212), (btn_coords[0], btn_coords[1] * 4, btn_coords), 0)
+        pygame.draw.rect(screen, pygame.Color(153, 192, 212), (btn_coords[0], btn_coords[1] * 4, *btn_coords), 0)
 
         while True:
             for event in pygame.event.get():
