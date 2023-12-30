@@ -1,4 +1,0 @@
-WIDTH = 1300
-HEIGHT = 900
-FPS = 60
-LIGHT = False
