@@ -80,17 +80,31 @@ class Ramp(pygame.sprite.Sprite):
 
 
 class Player(pygame.sprite.Sprite):
-    def __init__(self, lanes_y):
+    def __init__(self, lanes_y, sheet, columns, rows, size1, size2):
         pygame.sprite.Sprite.__init__(self)
-        self.image = pygame.Surface((50, 50))
-        self.image.fill(pygame.Color("green"))
+        self.frames = []
+        self.cut_sheet(sheet, columns, rows)
+        self.cur_frame = 0
+        self.image = self.frames[self.cur_frame]
         self.rect = self.image.get_rect()
         self.rect.centerx = WIDTH // 2
         self.rect.y = lanes_y[1] - self.rect.height
         self.speedy = 0
         self.gravity = 0.5
 
+
+    def cut_sheet(self, sheet, columns, rows):
+        self.rect = pygame.Rect(0, 0, sheet.get_width() // columns,
+                                sheet.get_height() // rows)
+        for j in range(rows):
+            for i in range(columns):
+                frame_location = (self.rect.w * i, self.rect.h * j)
+                self.frames.append(sheet.subsurface(pygame.Rect(
+                    frame_location, self.rect.size)))
+
     def update(self):
+        self.cur_frame = (self.cur_frame + 1) % len(self.frames)
+        self.image = self.frames[self.cur_frame]
         if not jump:
             self.speedy += self.gravity
             self.rect.y += self.speedy
@@ -137,9 +151,6 @@ def generate_level(level):
 
     return x, y
 
-
-pygame.init()
-clock = pygame.time.Clock()
 
 
 class Start:
@@ -249,7 +260,7 @@ cones = pygame.sprite.Group()
 ramps = pygame.sprite.Group()
 lanes_y = [500, 700, 900]
 
-player = Player(lanes_y)
+player = Player(lanes_y, load_image("player (1).png"), 5, 2, 50, 50)
 all_sprites.add(player)
 background_image = load_image("road.png")
 city_image = load_image("city2.png")
@@ -274,6 +285,7 @@ jump = False
 running = True
 count = 0
 count_ramp_hits = 0
+
 last_obstacle = 0
 last_cone = 0
 last_ramp = 0
@@ -291,7 +303,7 @@ lanes = {500: last_up, 700: last_mid, 900: last_down}
 }'''
 
 while running:
-    clock.tick(FPS)
+    clock.tick(FPS + count_points // 1000)
 
     last_obstacle += 1
     last_cone += 1
@@ -300,25 +312,35 @@ while running:
     last_mid += 1
     last_down += 1
 
+    print(last_up)
 
-    if random.randrange(100) < 3:
+
+    if random.randrange(100) < 25:
         random_obj = random.randint(0, 2)
         lane_y = random.choice(lanes_y)
-        if random_obj == 1:
-            obstacle = Obstacle(lane_y - 50)
-            all_sprites.add(obstacle)
-            obstacles.add(obstacle)
-            last_obstacle = 0
-        elif random_obj == 2:
-            cone = Cone(lane_y - 50)
-            all_sprites.add(cone)
-            cones.add(cone)
-            last_cone = 0
-        else:
-            ramp = Ramp(lane_y)
-            all_sprites.add(ramp)
-            ramps.add(ramp)
-            last_ramp = 0
+        if (lane_y == 500 and last_up > 20) or (lane_y == 700 and last_mid > 20) or (lane_y == 900 and last_down > 20):
+            if random_obj == 1 and last_obstacle > 30:
+                obstacle = Obstacle(lane_y - 50)
+                all_sprites.add(obstacle)
+                obstacles.add(obstacle)
+                last_obstacle = 0
+            elif random_obj == 2 and last_cone > 40:
+                cone = Cone(lane_y - 50)
+                all_sprites.add(cone)
+                cones.add(cone)
+                last_cone = 0
+            elif last_ramp > 50:
+                ramp = Ramp(lane_y)
+                all_sprites.add(ramp)
+                ramps.add(ramp)
+                last_ramp = 0
+            if lane_y == 500:
+                last_up = 0
+            elif lane_y == 700:
+                last_mid = 0
+            elif lane_y == 900:
+                last_down = 0
+
 
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -330,9 +352,7 @@ while running:
             elif jump is False and event.key == pygame.K_s:
                 if player.rect.bottom not in range(lanes_y[-2] + 1, lanes_y[-1] + 1):
                     player.rect.y += 200
-            elif event.key == pygame.K_c and player.rect.y in [ \
-                    x - 50 for x in lanes_y
-            ] and not jump:
+            elif event.key == pygame.K_c and not jump and player.rect.bottom in lanes_y: #добавить возможность прыгать на трубе.
                 jump = True
 
     if jump:
@@ -375,7 +395,7 @@ while running:
     if not on_obstacle and obstacles_hits and player.rect.bottom not in range(obstacles_hits[0].rect.top + 1, obstacles_hits[0].rect.bottom):
         print(player.rect.bottom, range(obstacles_hits[0].rect.top + 1, obstacles_hits[0].rect.bottom))
         e = End()
-        End.end_screen(e)
+        end_screen(e)
         running = False
     elif obstacles_hits:
         print(player.rect.bottom, range(obstacles_hits[0].rect.top + 2, obstacles_hits[0].rect.bottom))
