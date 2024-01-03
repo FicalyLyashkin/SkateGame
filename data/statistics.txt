@@ -1,0 +1,3 @@
+[Statistics]
+max_count_points = 385
+
