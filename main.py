@@ -5,9 +5,10 @@ import pygame
 import configparser
 import threading
 
-WIDTH = 1300
-HEIGHT = 900
-FPS = 60
+WIDTH = 650
+HEIGHT = WIDTH // 13 * 9
+print(HEIGHT, (650 // (650 / WIDTH), 450 // (450 / HEIGHT)), WIDTH // (1300 / 300))
+FPS = 35
 
 
 def load_image(name, colorkey=None):
@@ -47,7 +48,7 @@ clock = pygame.time.Clock()
 
 class Obstacle(pygame.sprite.Sprite):
     image = load_image("obstacle2.png")
-    image = pygame.transform.scale(image, (150, 50))
+    image = pygame.transform.scale(image, (WIDTH // 26 * 3, WIDTH // 26))
     def __init__(self, lane_y, lane_x=WIDTH):
         pygame.sprite.Sprite.__init__(self)
         self.image = Obstacle.image
@@ -65,7 +66,7 @@ class Obstacle(pygame.sprite.Sprite):
 
 class Cone(pygame.sprite.Sprite):
     image = load_image("cone.png")
-    image = pygame.transform.scale(image, (120, 120))
+    image = pygame.transform.scale(image, (WIDTH // 26 * 2.4, WIDTH // 26 * 2.4))
 
     def __init__(self, lane_y, lane_x=WIDTH):
         pygame.sprite.Sprite.__init__(self)
@@ -73,7 +74,7 @@ class Cone(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.mask = pygame.mask.from_surface(self.image)
         self.rect.x = lane_x
-        self.rect.y = lane_y - 50
+        self.rect.y = lane_y - WIDTH // 13 // 2
         self.speedx = 15
 
     def update(self):
@@ -84,14 +85,14 @@ class Cone(pygame.sprite.Sprite):
 
 class Ramp(pygame.sprite.Sprite):
     image = load_image("ramp.png")
-    image = pygame.transform.scale(image, (170, 90))
+    image = pygame.transform.scale(image, (WIDTH // 26 * 3.4, WIDTH // 26 * 1.8))
     def __init__(self, lane_y):
         pygame.sprite.Sprite.__init__(self)
         self.image = Ramp.image
         self.rect = self.image.get_rect()
         self.mask = pygame.mask.from_surface(self.image)
         self.rect.x = WIDTH
-        self.rect.y = lane_y - 90
+        self.rect.y = lane_y - WIDTH // 26 * 1.8
         self.speedx = 15
 
     def update(self):
@@ -145,7 +146,7 @@ sprites_names = {
     'obstracle': Obstacle
 }
 
-tile_width = tile_height = 50
+tile_width = tile_height = WIDTH // 26
 
 
 def generate_level(level):
@@ -155,12 +156,12 @@ def generate_level(level):
                 pass
             elif level[y][x] == '*':
                 lane_y = lanes_y[y]
-                cone = Cone(lane_y - 50)
+                cone = Cone(lane_y - WIDTH // 13 // 2)
                 all_sprites.add(cone)
                 cones.add(cone)
             elif level[y][x] == '-':
                 lane_y = lanes_y[y]
-                obstacle = Obstacle(lane_y - 50)
+                obstacle = Obstacle(lane_y - WIDTH // 13 // 2)
                 all_sprites.add(obstacle)
                 obstacles.add(obstacle)
             elif level[y][x] == "+":
@@ -250,7 +251,7 @@ class End:
         while True:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
-                    end_scr.terminate()
+                    end_scr.terminate(self)
                 elif event.type == pygame.MOUSEBUTTONDOWN and event.pos[0] in range(btn_coords[0],
                                                                                     btn_coords[0] * 2) and \
                         event.pos[1] in range(btn_coords[1] * 4, btn_coords[1] * 5):
@@ -279,21 +280,29 @@ all_sprites = pygame.sprite.Group()
 obstacles = pygame.sprite.Group()
 cones = pygame.sprite.Group()
 ramps = pygame.sprite.Group()
-lanes_y = [500, 700, 900]
+lanes_y = [int(WIDTH // (1300 / 500)), int(WIDTH // (1300 / 700)), int(WIDTH // (1300 / 900))]
+print("aaa", lanes_y)
 
 player = Player(lanes_y, load_image("player (1).png"), 5, 2, 50, 50)
 all_sprites.add(player)
-background_image = load_image("road.png")
-city_image = load_image("city2.png")
-fence_image = load_image("fence.png")
+if WIDTH != 1300:
+    background_image = pygame.transform.scale(load_image("road.png"), (2600 // (1300 / WIDTH), 600 // (900 / HEIGHT)))
+    city_image = pygame.transform.scale(load_image("city2.png"), (int(650 / (650 / WIDTH) * 2), int(450 / (450 / HEIGHT) * 2 // 6)))
+    #city_image = load_image("city2.png")
+    fence_image = pygame.transform.scale(load_image("fence.png"), (2600 // (1300 / WIDTH), 100 // (900 / HEIGHT)))
+else:
+    background_image = load_image("road.png")
+    city_image = load_image("city2.png")
+    fence_image = load_image("fence.png")
+print(city_image.get_width(), city_image.get_height())
 background_x = 0
 background_speed = -15
 city_x = 0
-city_speed = -9
+city_speed = -(WIDTH // (1300 / 9))
 fence_x = 0
 fence_speed = -13
 
-font = pygame.font.Font(None, 50)
+font = pygame.font.Font(None, WIDTH // 26)
 text_color = pygame.Color("red")
 jump = False
 
@@ -316,7 +325,7 @@ last_mid = 0
 last_down = 0
 on_obstacle = False
 
-lanes = {500: last_up, 700: last_mid, 900: last_down}
+lanes = {lanes_y[0]: last_up, lanes_y[1]: last_mid, lanes_y[2]: last_down}
 
 '''sprites_names = {
     0: Ramp(lane_y),
@@ -334,20 +343,20 @@ while running:
     last_mid += 1
     last_down += 1
 
-    print(last_up)
+    print("lasr up", last_up)
 
 
     if random.randrange(100) < 60:
         random_obj = random.randint(0, 2)
         lane_y = random.choice(lanes_y)
-        if (lane_y == 500 and last_up > 20) or (lane_y == 700 and last_mid > 20) or (lane_y == 900 and last_down > 20):
+        if (lane_y == lanes_y[0] and last_up > 20) or (lane_y == lanes_y[1] and last_mid > 20) or (lane_y == lanes_y[2] and last_down > 20):
             if random_obj == 1 and last_obstacle > 30:
-                obstacle = Obstacle(lane_y - 50)
+                obstacle = Obstacle(lane_y - WIDTH // 26)
                 all_sprites.add(obstacle)
                 obstacles.add(obstacle)
                 last_obstacle = 0
             elif random_obj == 2 and last_cone > 40:
-                cone = Cone(lane_y - 50)
+                cone = Cone(lane_y - WIDTH // 13 // 2)
                 all_sprites.add(cone)
                 cones.add(cone)
                 last_cone = 0
@@ -357,7 +366,7 @@ while running:
                     ramp = Ramp(lane_y)
                     all_sprites.add(ramp)
                     ramps.add(ramp)
-                    cone = Cone(lane_y - 50, lane_x=WIDTH + 150)
+                    cone = Cone(lane_y - WIDTH // 13 // 2, lane_x=WIDTH + WIDTH // 13 // 2 * 3)
                     all_sprites.add(cone)
                     cones.add(cone)
                     last_cone = 0
@@ -366,16 +375,16 @@ while running:
                     ramp = Ramp(lane_y)
                     all_sprites.add(ramp)
                     ramps.add(ramp)
-                    obstacle = Obstacle(lane_y - 50, lane_x=WIDTH + 180)
+                    obstacle = Obstacle(lane_y - WIDTH // 13 // 2, lane_x=WIDTH + WIDTH // 13 // 2 * 3.6)
                     all_sprites.add(obstacle)
                     obstacles.add(obstacle)
                     last_obstacle = 0
                     last_cone = 0
-            if lane_y == 500:
+            if lane_y == lanes_y[0]:
                 last_up = 0
-            elif lane_y == 700:
+            elif lane_y == lanes_y[1]:
                 last_mid = 0
-            elif lane_y == 900:
+            elif lane_y == lanes_y[2]:
                 last_down = 0
 
 
@@ -385,16 +394,16 @@ while running:
         elif event.type == pygame.KEYDOWN:
             if event.key == pygame.K_w and not jump:
                 if player.rect.top > lanes_y[0]:
-                    player.rect.y -= 200
+                    player.rect.y -= lanes_y[1] - lanes_y[0]
             elif jump is False and event.key == pygame.K_s:
                 if player.rect.bottom not in range(lanes_y[-2] + 1, lanes_y[-1] + 1):
-                    player.rect.y += 200
+                    player.rect.y += lanes_y[1] - lanes_y[0]
             elif event.key == pygame.K_c and not jump and player.rect.bottom in lanes_y: #добавить возможность прыгать на трубе.
                 jump = True
 
     if jump:
         if count < 1:
-            player.rect.y -= 55
+            player.rect.y -= WIDTH // 130 * 11 // 2
         count += 1
         if count == 10:
             jump = False
@@ -410,7 +419,7 @@ while running:
         player.gravity = 0
         ramp_hits = ramp_hits[0]
         ramp_top = ramp_hits.rect.top
-        player.rect.bottom -= 20
+        player.rect.bottom -= WIDTH // 260 * 4
         print(ramp_top, player.rect.bottom)
     else:
         player.gravity = 0.5
@@ -421,10 +430,12 @@ while running:
         End.end_screen(e)
         running = False
 
+    print("obstr", player.rect.right)
+
     if on_obstacle:
         player.rect.bottom = obstacle_top + 1
         print(player.rect.left, obstacle_hits.rect.right)
-        if obstacle_hits.rect.right == 625:
+        if obstacle_hits.rect.right == WIDTH // 13 * 7:
             on_obstacle = False
 
 
@@ -443,20 +454,22 @@ while running:
         on_obstacle = True
 
     screen.fill((0, 0, 0))
-    if background_x <= -1300:
+    if background_x <= -WIDTH:
         background_x = 0
-    if city_x <= -1300:
+    if city_x <= -WIDTH:
         city_x = 0
 
-    if fence_x <= -1300:
+    if fence_x <= -WIDTH:
         fence_x = 0
 
-    screen.blit(background_image, (background_x, 300))
+
+
+    screen.blit(background_image, (background_x, 300 // (1300 / WIDTH)))
     screen.blit(city_image, (city_x, 0))
-    screen.blit(fence_image, (fence_x, 200))
+    screen.blit(fence_image, (fence_x, 200 // (1300 / WIDTH)))
 
     score_text = font.render(str(count_points // 5), True, text_color)
-    screen.blit(score_text, (1175, 50))
+    screen.blit(score_text, (WIDTH // 13 * 12, WIDTH // 26))
 
     clock.tick(FPS + count_points // 1000)
     print("speed:", FPS + count_points // 1000)
