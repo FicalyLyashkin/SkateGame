@@ -19,12 +19,14 @@ def load_image(name, colorkey=None):
     image = pygame.image.load(fullname)
     return image
 
+
 def load_level(filename):
     filename = "data/" + filename
     with open(filename, 'r') as mapFile:
         level_map = [line.strip() for line in mapFile]
     max_width = max(map(len, level_map))
     return list(map(lambda x: x.ljust(max_width, '.'), level_map))
+
 
 def write_statistics(filename, points):
     print(load_statistics(filename), points)
@@ -35,11 +37,13 @@ def write_statistics(filename, points):
         with open("data/" + filename, 'w') as f:
             config.write(f)
 
+
 def load_statistics(filename):
     config = configparser.ConfigParser()
     config.read("data/" + filename)
     past_res = config["Statistics"]["max_count_points"]
     return past_res
+
 
 pygame.init()
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
@@ -49,6 +53,7 @@ clock = pygame.time.Clock()
 class Obstacle(pygame.sprite.Sprite):
     image = load_image("obstacle2.png")
     image = pygame.transform.scale(image, (WIDTH // 26 * 3, WIDTH // 26))
+
     def __init__(self, lane_y, lane_x=WIDTH):
         pygame.sprite.Sprite.__init__(self)
         self.image = Obstacle.image
@@ -86,6 +91,7 @@ class Cone(pygame.sprite.Sprite):
 class Ramp(pygame.sprite.Sprite):
     image = load_image("ramp.png")
     image = pygame.transform.scale(image, (WIDTH // 26 * 3.4, WIDTH // 26 * 1.8))
+
     def __init__(self, lane_y):
         pygame.sprite.Sprite.__init__(self)
         self.image = Ramp.image
@@ -139,6 +145,7 @@ class Player(pygame.sprite.Sprite):
         if self.rect.top <= 0:
             self.rect.top = 0
             self.speedy = 0
+
 
 sprites_names = {
     'ramp': Ramp,
@@ -276,6 +283,7 @@ class End:
         pygame.quit()
         sys.exit()
 
+
 all_sprites = pygame.sprite.Group()
 obstacles = pygame.sprite.Group()
 cones = pygame.sprite.Group()
@@ -283,12 +291,13 @@ ramps = pygame.sprite.Group()
 lanes_y = [int(WIDTH // (1300 / 500)), int(WIDTH // (1300 / 700)), int(WIDTH // (1300 / 900))]
 print("aaa", lanes_y)
 
-player = Player(lanes_y, load_image("player (1).png"), 5, 2, 50, 50)
+player = Player(lanes_y, pygame.transform.scale(load_image("player (1).png"), (250 // (1300 / WIDTH), 95 // (900 / HEIGHT))), 5, 2, 50, 50)
 all_sprites.add(player)
 if WIDTH != 1300:
     background_image = pygame.transform.scale(load_image("road.png"), (2600 // (1300 / WIDTH), 600 // (900 / HEIGHT)))
-    city_image = pygame.transform.scale(load_image("city2.png"), (int(650 / (650 / WIDTH) * 2), int(450 / (450 / HEIGHT) * 2 // 6)))
-    #city_image = load_image("city2.png")
+    city_image = pygame.transform.scale(load_image("city2.png"),
+                                        (int(650 / (650 / WIDTH) * 2), int(450 / (450 / HEIGHT) * 2 // 6)))
+    # city_image = load_image("city2.png")
     fence_image = pygame.transform.scale(load_image("fence.png"), (2600 // (1300 / WIDTH), 100 // (900 / HEIGHT)))
 else:
     background_image = load_image("road.png")
@@ -345,11 +354,11 @@ while running:
 
     print("lasr up", last_up)
 
-
     if random.randrange(100) < 60:
         random_obj = random.randint(0, 2)
         lane_y = random.choice(lanes_y)
-        if (lane_y == lanes_y[0] and last_up > 20) or (lane_y == lanes_y[1] and last_mid > 20) or (lane_y == lanes_y[2] and last_down > 20):
+        if (lane_y == lanes_y[0] and last_up > 20) or (lane_y == lanes_y[1] and last_mid > 20) or (
+                lane_y == lanes_y[2] and last_down > 20):
             if random_obj == 1 and last_obstacle > 30:
                 obstacle = Obstacle(lane_y - WIDTH // 26)
                 all_sprites.add(obstacle)
@@ -387,7 +396,6 @@ while running:
             elif lane_y == lanes_y[2]:
                 last_down = 0
 
-
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
@@ -398,7 +406,7 @@ while running:
             elif jump is False and event.key == pygame.K_s:
                 if player.rect.bottom not in range(lanes_y[-2] + 1, lanes_y[-1] + 1):
                     player.rect.y += lanes_y[1] - lanes_y[0]
-            elif event.key == pygame.K_c and not jump and player.rect.bottom in lanes_y: #добавить возможность прыгать на трубе.
+            elif event.key == pygame.K_c and not jump and player.rect.bottom in lanes_y:  # добавить возможность прыгать на трубе.
                 jump = True
 
     if jump:
@@ -438,9 +446,9 @@ while running:
         if obstacle_hits.rect.right == WIDTH // 13 * 7:
             on_obstacle = False
 
-
     obstacles_hits = pygame.sprite.spritecollide(player, obstacles, False, pygame.sprite.collide_mask)
-    if not on_obstacle and obstacles_hits and player.rect.bottom not in range(obstacles_hits[0].rect.top + 1, obstacles_hits[0].rect.bottom):
+    if not on_obstacle and obstacles_hits and player.rect.bottom not in range(obstacles_hits[0].rect.top + 1,
+                                                                              obstacles_hits[0].rect.bottom):
         print(player.rect.bottom, range(obstacles_hits[0].rect.top + 1, obstacles_hits[0].rect.bottom))
         e = End()
         end_scr.end_screen(e)
@@ -461,8 +469,6 @@ while running:
 
     if fence_x <= -WIDTH:
         fence_x = 0
-
-
 
     screen.blit(background_image, (background_x, 300 // (1300 / WIDTH)))
     screen.blit(city_image, (city_x, 0))
