@@ -5,7 +5,7 @@ import pygame
 import configparser
 import threading
 
-WIDTH = 650
+WIDTH = 1300
 HEIGHT = WIDTH // 13 * 9
 print(HEIGHT, (650 // (650 / WIDTH), 450 // (450 / HEIGHT)), WIDTH // (1300 / 300))
 FPS = 35
@@ -191,14 +191,14 @@ class Start:
 
         fon = pygame.transform.scale(load_image('city.png'), (WIDTH, HEIGHT))
         screen.blit(fon, (0, 0))
-        font = pygame.font.Font(None, 50)
-        text_coord = 50
+        font = pygame.font.Font(None, WIDTH // 26)
+        text_coord = WIDTH // 26
         for line in intro_text:
             string_rendered = font.render(line, 1, pygame.Color('black'))
             intro_rect = string_rendered.get_rect()
             text_coord += 1
             intro_rect.top = text_coord
-            intro_rect.x = 50
+            intro_rect.x = WIDTH // 26
             text_coord += intro_rect.height
             screen.blit(string_rendered, intro_rect)
         pygame.draw.rect(screen, pygame.Color(153, 192, 212), (WIDTH // 3, HEIGHT // 6 * 4, WIDTH // 3, HEIGHT // 6), 0)
@@ -242,8 +242,8 @@ class End:
         write_statistics("statistics.txt", count_points // 5)
 
         screen.fill(pygame.Color(153, 192, 212))
-        font = pygame.font.Font(None, 70)
-        text_coord = 50
+        font = pygame.font.Font(None, WIDTH // 13)
+        text_coord = WIDTH // 20
         for line in intro_text:
             string_rendered = font.render(line, 1, pygame.Color('black'))
             intro_rect = string_rendered.get_rect()
@@ -291,7 +291,9 @@ ramps = pygame.sprite.Group()
 lanes_y = [int(WIDTH // (1300 / 500)), int(WIDTH // (1300 / 700)), int(WIDTH // (1300 / 900))]
 print("aaa", lanes_y)
 
-player = Player(lanes_y, pygame.transform.scale(load_image("player (1).png"), (250 // (1300 / WIDTH), 95 // (900 / HEIGHT))), 5, 2, 50, 50)
+player = Player(lanes_y,
+                pygame.transform.scale(load_image("player (1).png"), (250 // (1300 / WIDTH), 95 // (900 / HEIGHT))), 5,
+                2, 50, 50)
 all_sprites.add(player)
 if WIDTH != 1300:
     background_image = pygame.transform.scale(load_image("road.png"), (2600 // (1300 / WIDTH), 600 // (900 / HEIGHT)))

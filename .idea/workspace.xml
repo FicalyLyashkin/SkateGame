@@ -4,8 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="011976d9-5710-4b28-9dd0-f96a3467f4a4" name="Changes" comment="теперь все размеры зависят от WIDTH">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+    <list default="true" id="011976d9-5710-4b28-9dd0-f96a3467f4a4" name="Changes" comment="размер игрока в зависимости от экрана">
       <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -82,19 +81,28 @@
       <option name="project" value="LOCAL" />
       <updated>1704573746646</updated>
     </task>
-    <option name="localTasksCounter" value="2" />
+    <task id="LOCAL-00002" summary="размер игрока в зависимости от экрана">
+      <option name="closed" value="true" />
+      <created>1704574377714</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1704574377714</updated>
+    </task>
+    <option name="localTasksCounter" value="3" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="теперь все размеры зависят от WIDTH" />
-    <option name="LAST_COMMIT_MESSAGE" value="теперь все размеры зависят от WIDTH" />
+    <MESSAGE value="размер игрока в зависимости от экрана" />
+    <option name="LAST_COMMIT_MESSAGE" value="размер игрока в зависимости от экрана" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
       <breakpoints>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/main.py</url>
-          <line>296</line>
+          <line>298</line>
           <option name="timeStamp" value="2" />
         </line-breakpoint>
       </breakpoints>
