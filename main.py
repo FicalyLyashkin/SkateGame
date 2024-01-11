@@ -3,12 +3,22 @@ import sys
 import os
 import pygame
 import configparser
-import threading
+import pygame.mixer
 
 WIDTH = 1300
 HEIGHT = WIDTH // 13 * 9
 print(HEIGHT, (650 // (650 / WIDTH), 450 // (450 / HEIGHT)), WIDTH // (1300 / 300))
 FPS = 35
+count_points = 0
+jump = True
+lanes_y = [int(WIDTH // (1300 / 500)), int(WIDTH // (1300 / 700)), int(WIDTH // (1300 / 900))]
+all_sprites = pygame.sprite.Group()
+obstacles = pygame.sprite.Group()
+cones = pygame.sprite.Group()
+ramps = pygame.sprite.Group()
+last_level = 1
+obj_speed = 15
+
 
 
 def load_image(name, colorkey=None):
@@ -45,11 +55,6 @@ def load_statistics(filename):
     return past_res
 
 
-pygame.init()
-screen = pygame.display.set_mode((WIDTH, HEIGHT))
-clock = pygame.time.Clock()
-
-
 class Obstacle(pygame.sprite.Sprite):
     image = load_image("obstacle2.png")
     image = pygame.transform.scale(image, (WIDTH // 26 * 3, WIDTH // 26))
@@ -61,7 +66,7 @@ class Obstacle(pygame.sprite.Sprite):
         self.mask = pygame.mask.from_surface(self.image)
         self.rect.x = lane_x
         self.rect.y = lane_y
-        self.speedx = 15
+        self.speedx = obj_speed
 
     def update(self):
         self.rect.x -= self.speedx
@@ -80,7 +85,7 @@ class Cone(pygame.sprite.Sprite):
         self.mask = pygame.mask.from_surface(self.image)
         self.rect.x = lane_x
         self.rect.y = lane_y - WIDTH // 13 // 2
-        self.speedx = 15
+        self.speedx = obj_speed
 
     def update(self):
         self.rect.x -= self.speedx
@@ -99,7 +104,7 @@ class Ramp(pygame.sprite.Sprite):
         self.mask = pygame.mask.from_surface(self.image)
         self.rect.x = WIDTH
         self.rect.y = lane_y - WIDTH // 26 * 1.8
-        self.speedx = 15
+        self.speedx = obj_speed
 
     def update(self):
         self.rect.x -= self.speedx
@@ -147,15 +152,6 @@ class Player(pygame.sprite.Sprite):
             self.speedy = 0
 
 
-sprites_names = {
-    'ramp': Ramp,
-    'cone': Cone,
-    'obstracle': Obstacle
-}
-
-tile_width = tile_height = WIDTH // 26
-
-
 def generate_level(level):
     for y in range(len(level)):
         for x in range(len(level[y])):
@@ -180,11 +176,209 @@ def generate_level(level):
     return x, y
 
 
+def game(level):
+    global jump, FPS, WIDTH, HEIGHT, count_points, obj_speed
+
+    player = Player(lanes_y,
+                    pygame.transform.scale(load_image("player (1).png"), (250 // (1300 / WIDTH), 95 // (900 / HEIGHT))), 5,
+                    2, 50, 50)
+    all_sprites.add(player)
+    if WIDTH != 1300:
+        background_image = pygame.transform.scale(load_image("road.png"), (2600 // (1300 / WIDTH), 600 // (900 / HEIGHT)))
+        city_image = pygame.transform.scale(load_image("city2.png"),
+                                            (int(650 / (650 / WIDTH) * 2), int(450 / (450 / HEIGHT) * 2 // 6)))
+        # city_image = load_image("city2.png")
+        fence_image = pygame.transform.scale(load_image("fence.png"), (2600 // (1300 / WIDTH), 100 // (900 / HEIGHT)))
+    else:
+        background_image = load_image("road.png")
+        city_image = load_image("city2.png")
+        fence_image = load_image("fence.png")
+    print(city_image.get_width(), city_image.get_height())
+    background_x = 0
+    background_speed = -obj_speed
+    city_x = 0
+    city_speed = -(WIDTH // (1300 / 9))
+    fence_x = 0
+    fence_speed = -obj_speed + 2
+
+    font = pygame.font.Font(None, WIDTH // 26)
+    text_color = pygame.Color("red")
+
+    count_points = 0
+    jump = False
+    running = True
+    count = 0
+    count_ramp_gravity = 0
+    count_ramp_hits = 0
+
+    last_obstacle = 0
+    last_cone = 0
+    last_ramp = 0
+    last_up = 0
+    last_mid = 0
+    last_down = 0
+    on_obstacle = False
+
+    lanes = {lanes_y[0]: last_up, lanes_y[1]: last_mid, lanes_y[2]: last_down}
+
+    '''sprites_names = {
+        0: Ramp(lane_y),
+        1: Obstacle(lane_y - 50),
+        2: Cone(lane_y - 50)
+    }'''
+    pygame.mixer.music.play(-1, 0.0)
+    while running:
+
+        last_obstacle += 1
+        last_cone += 1
+        last_ramp += 1
+        last_up += 1
+        last_mid += 1
+        last_down += 1
+
+        print("lasr up", last_up)
+
+        if random.randrange(100) < 60:
+            random_obj = random.randint(0, 2)
+            lane_y = random.choice(lanes_y)
+            if (lane_y == lanes_y[0] and last_up > 20) or (lane_y == lanes_y[1] and last_mid > 20) or (
+                    lane_y == lanes_y[2] and last_down > 20):
+                if random_obj == 1 and last_obstacle > 30:
+                    obstacle = Obstacle(lane_y - WIDTH // 26)
+                    all_sprites.add(obstacle)
+                    obstacles.add(obstacle)
+                    last_obstacle = 0
+                elif random_obj == 2 and last_cone > 40:
+                    cone = Cone(lane_y - WIDTH // 13 // 2)
+                    all_sprites.add(cone)
+                    cones.add(cone)
+                    last_cone = 0
+                elif random_obj == 0 and last_ramp > 50:
+                    random_obj_ramp = random.randint(0, 1)
+                    if random_obj_ramp == 0:
+                        ramp = Ramp(lane_y)
+                        all_sprites.add(ramp)
+                        ramps.add(ramp)
+                        cone = Cone(lane_y - WIDTH // 13 // 2, lane_x=WIDTH + WIDTH // 13 // 2 * 3)
+                        all_sprites.add(cone)
+                        cones.add(cone)
+                        last_cone = 0
+                        last_ramp = 0
+                    else:
+                        ramp = Ramp(lane_y)
+                        all_sprites.add(ramp)
+                        ramps.add(ramp)
+                        obstacle = Obstacle(lane_y - WIDTH // 13 // 2, lane_x=WIDTH + WIDTH // 13 // 2 * 3.6)
+                        all_sprites.add(obstacle)
+                        obstacles.add(obstacle)
+                        last_obstacle = 0
+                        last_cone = 0
+                if lane_y == lanes_y[0]:
+                    last_up = 0
+                elif lane_y == lanes_y[1]:
+                    last_mid = 0
+                elif lane_y == lanes_y[2]:
+                    last_down = 0
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                e = End()
+                End.end_screen(e)
+                running = False
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_w and not jump:
+                    if player.rect.top > lanes_y[0]:
+                        player.rect.y -= lanes_y[1] - lanes_y[0]
+                elif jump is False and event.key == pygame.K_s:
+                    if player.rect.bottom not in range(lanes_y[-2] + 1, lanes_y[-1] + 1):
+                        player.rect.y += lanes_y[1] - lanes_y[0]
+                elif event.key == pygame.K_c and not jump and player.rect.bottom in lanes_y:  # добавить возможность прыгать на трубе.
+                    jump = True
+
+        if jump:
+            if count < 1:
+                player.rect.y -= WIDTH // 130 * 11 // 2
+            count += 1
+            if count == 10:
+                jump = False
+                count = 0
+        count_points += 1
+        all_sprites.update()
+
+        background_x += background_speed
+        city_x += city_speed
+        fence_x += fence_speed
+        ramp_hits = pygame.sprite.spritecollide(player, ramps, False, pygame.sprite.collide_mask)
+        if ramp_hits:
+            player.gravity = 0
+            ramp_hits = ramp_hits[0]
+            ramp_top = ramp_hits.rect.top
+            player.rect.bottom -= WIDTH // 260 * 4
+            print(ramp_top, player.rect.bottom)
+        else:
+            player.gravity = 0.5
+
+        hits = pygame.sprite.spritecollide(player, cones, False, pygame.sprite.collide_mask)
+        if hits:
+            e = End()
+            End.end_screen(e)
+            running = False
+
+        print("obstr", player.rect.right)
+
+        if on_obstacle:
+            player.rect.bottom = obstacle_top + 1
+            print(player.rect.left, obstacle_hits.rect.right)
+            if obstacle_hits.rect.right == WIDTH // 13 * 7:
+                on_obstacle = False
+
+        obstacles_hits = pygame.sprite.spritecollide(player, obstacles, False, pygame.sprite.collide_mask)
+        if not on_obstacle and obstacles_hits and player.rect.bottom not in range(obstacles_hits[0].rect.top + 1,
+                                                                                  obstacles_hits[0].rect.bottom):
+            print(player.rect.bottom, range(obstacles_hits[0].rect.top + 1, obstacles_hits[0].rect.bottom))
+            e = End()
+            End.end_screen(e)
+            running = False
+        elif obstacles_hits:
+            print(player.rect.bottom, range(obstacles_hits[0].rect.top + 2, obstacles_hits[0].rect.bottom))
+            obstacle_hits = obstacles_hits[0]
+            obstacle_top = obstacle_hits.rect.top
+            player.rect.bottom = obstacle_top
+
+            on_obstacle = True
+
+        screen.fill((0, 0, 0))
+        if background_x <= -WIDTH:
+            background_x = 0
+        if city_x <= -WIDTH:
+            city_x = 0
+
+        if fence_x <= -WIDTH:
+            fence_x = 0
+
+        screen.blit(background_image, (background_x, 300 // (1300 / WIDTH)))
+        screen.blit(city_image, (city_x, 0))
+        screen.blit(fence_image, (fence_x, 200 // (1300 / WIDTH)))
+
+        score_text = font.render(str(count_points // 5), True, text_color)
+        screen.blit(score_text, (WIDTH // 13 * 12, WIDTH // 26))
+
+        clock.tick(FPS + count_points // 1000)
+        print("speed:", FPS + count_points // 1000)
+        all_sprites.draw(screen)
+        pygame.display.flip()
+
+    return
+
 class Start:
     def __init__(self):
-        self.light = False
+        self.light_easy = False
+        self.light_medium = False
+        self.light_hard = False
+
 
     def start_screen(self):
+        global last_level, obj_speed, FPS
         intro_text = ["НАЗВАНИЕ ИГРЫ", "",
                       "Правила игры", "",
                       f"Рекорд: {load_statistics('statistics.txt')} очк"]
@@ -201,28 +395,75 @@ class Start:
             intro_rect.x = WIDTH // 26
             text_coord += intro_rect.height
             screen.blit(string_rendered, intro_rect)
-        pygame.draw.rect(screen, pygame.Color(153, 192, 212), (WIDTH // 3, HEIGHT // 6 * 4, WIDTH // 3, HEIGHT // 6), 0)
+        button_easy_rect = pygame.Rect(WIDTH // 3, (HEIGHT // 6 * 4) - 250, WIDTH // 3, HEIGHT // 10)
+        button_medium_rect = pygame.Rect(WIDTH // 3, (HEIGHT // 6 * 4) - 150, WIDTH // 3, HEIGHT // 10)
+        button_hard_rect = pygame.Rect(WIDTH // 3, (HEIGHT // 6 * 4) - 50, WIDTH // 3, HEIGHT // 10)
+        button_easy_text = font.render("easy", True, pygame.Color('black'))
+        button_medium_text = font.render("medium", True, pygame.Color('black'))
+        button_hard_text = font.render("hard", True, pygame.Color('black'))
+        pygame.draw.rect(screen, pygame.Color(153, 192, 212), button_easy_rect, 0)
+        pygame.draw.rect(screen, pygame.Color(153, 192, 212), button_medium_rect, 0)
+        pygame.draw.rect(screen, pygame.Color(153, 192, 212), button_hard_rect, 0)
+        screen.blit(button_easy_text, (button_easy_rect.x + WIDTH // 8, button_easy_rect.y + 25))
+        screen.blit(button_medium_text, (button_medium_rect.x + WIDTH // 8, button_medium_rect.y + 25))
+        screen.blit(button_hard_text, (button_hard_rect.x + WIDTH // 8, button_hard_rect.y + 25))
 
         while True:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     end_scr.terminate()
-                elif event.type == pygame.MOUSEBUTTONDOWN and event.pos[0] in range(WIDTH // 3, WIDTH // 3 * 2) and \
-                        event.pos[1] in range(HEIGHT // 6 * 4, HEIGHT // 6 * 5):
-                    return  # начинаем игру
+                elif event.type == pygame.MOUSEBUTTONDOWN:
+                    if button_easy_rect.collidepoint(event.pos):
+                        obj_speed = 15
+                        last_level = 1
+                        game(1)
+                    elif button_medium_rect.collidepoint(event.pos):
+                        obj_speed = 25
+                        last_level = 2
+                        game(2)
+                    elif button_hard_rect.collidepoint(event.pos):
+                        obj_speed = 40
+                        last_level = 3
+                        game(3)
                 elif event.type == pygame.MOUSEMOTION:
-                    if event.pos[0] in range(WIDTH // 3, WIDTH // 3 * 2) and event.pos[1] in range(HEIGHT // 6 * 4,
-                                                                                                   HEIGHT // 6 * 5):
-                        self.light = True
+                    if button_easy_rect.collidepoint(event.pos):
+                        self.light_easy = True
                     else:
-                        self.light = False
+                        self.light_easy = False
 
-            if self.light:
+                    if button_medium_rect.collidepoint(event.pos):
+                        self.light_medium = True
+                    else:
+                        self.light_medium = False
+
+                    if button_hard_rect.collidepoint(event.pos):
+                        self.light_hard = True
+                    else:
+                        self.light_hard = False
+
+            if self.light_easy:
                 pygame.draw.rect(screen, pygame.Color(210, 228, 236),
-                                 (WIDTH // 3, HEIGHT // 6 * 4, WIDTH // 3, HEIGHT // 6), 0)
+                                 button_easy_rect, 0)
             else:
                 pygame.draw.rect(screen, pygame.Color(153, 192, 212),
-                                 (WIDTH // 3, HEIGHT // 6 * 4, WIDTH // 3, HEIGHT // 6), 0)
+                                 button_easy_rect, 0)
+
+            if self.light_medium:
+                pygame.draw.rect(screen, pygame.Color(210, 228, 236),
+                                 button_medium_rect, 0)
+            else:
+                pygame.draw.rect(screen, pygame.Color(153, 192, 212),
+                                 button_medium_rect, 0)
+
+            if self.light_hard:
+                pygame.draw.rect(screen, pygame.Color(210, 228, 236),
+                                 button_hard_rect, 0)
+            else:
+                pygame.draw.rect(screen, pygame.Color(153, 192, 212),
+                                 button_hard_rect, 0)
+            screen.blit(button_easy_text, (button_easy_rect.x + WIDTH // 8, button_easy_rect.y + 25))
+            screen.blit(button_medium_text, (button_medium_rect.x + WIDTH // 8, button_medium_rect.y + 25))
+            screen.blit(button_hard_text, (button_hard_rect.x + WIDTH // 8, button_hard_rect.y + 25))
             pygame.display.flip()
             clock.tick(FPS)
 
@@ -233,17 +474,26 @@ class Start:
 
 class End:
     def __init__(self):
-        self.on_btn = False
+        self.light_restart = False
+        self.light_menu = False
+        self.light_leave = False
 
     def end_screen(self):
+        global last_level
         intro_text = ["ВЫ ПРОИГРАЛИ", "",
                       "Счёт: {}".format(count_points // 5)]
 
         write_statistics("statistics.txt", count_points // 5)
-
-        screen.fill(pygame.Color(153, 192, 212))
+        pygame.mixer.music.stop()
+        fon = pygame.transform.scale(load_image('city.png'), (WIDTH, HEIGHT))
+        screen.blit(fon, (0, 0))
         font = pygame.font.Font(None, WIDTH // 13)
+        font_buttons = pygame.font.Font(None, WIDTH // 26)
         text_coord = WIDTH // 20
+        all_sprites.empty()
+        obstacles.empty()
+        cones.empty()
+        ramps.empty()
         for line in intro_text:
             string_rendered = font.render(line, 1, pygame.Color('black'))
             intro_rect = string_rendered.get_rect()
@@ -252,30 +502,70 @@ class End:
             intro_rect.x = WIDTH // 3
             text_coord += intro_rect.height
             screen.blit(string_rendered, intro_rect)
-        btn_coords = (WIDTH // 3, HEIGHT // 6)
-        pygame.draw.rect(screen, pygame.Color(153, 192, 212), (btn_coords[0], btn_coords[1] * 4, *btn_coords), 0)
+        button_restart_rect = pygame.Rect(WIDTH // 3, (HEIGHT // 6 * 4) - 250, WIDTH // 3, HEIGHT // 10)
+        button_menu_rect = pygame.Rect(WIDTH // 3, (HEIGHT // 6 * 4) - 150, WIDTH // 3, HEIGHT // 10)
+        button_leave_rect = pygame.Rect(WIDTH // 3, (HEIGHT // 6 * 4) - 50, WIDTH // 3, HEIGHT // 10)
+        button_restart_text = font_buttons.render("Попробовать заново", True, pygame.Color('black'))
+        button_menu_text = font_buttons.render("Меню", True, pygame.Color('black'))
+        button_leave_text = font_buttons.render("Выйти из игры", True, pygame.Color('black'))
+        pygame.draw.rect(screen, pygame.Color(153, 192, 212), button_restart_rect, 0)
+        pygame.draw.rect(screen, pygame.Color(153, 192, 212), button_menu_rect, 0)
+        pygame.draw.rect(screen, pygame.Color(153, 192, 212), button_leave_rect, 0)
+        screen.blit(button_restart_text, (button_restart_rect.x + WIDTH // 28, button_restart_rect.y + 25))
+        screen.blit(button_menu_text, (button_menu_rect.x + WIDTH // 8, button_menu_rect.y + 25))
+        screen.blit(button_leave_text, (button_leave_rect.x + WIDTH // 16, button_leave_rect.y + 25))
 
         while True:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
-                    end_scr.terminate(self)
-                elif event.type == pygame.MOUSEBUTTONDOWN and event.pos[0] in range(btn_coords[0],
-                                                                                    btn_coords[0] * 2) and \
-                        event.pos[1] in range(btn_coords[1] * 4, btn_coords[1] * 5):
                     self.terminate()
+                elif event.type == pygame.MOUSEBUTTONDOWN:
+                    if button_restart_rect.collidepoint(event.pos):
+                        game(last_level)
+                    elif button_menu_rect.collidepoint(event.pos):
+                        s = Start()
+                        Start.start_screen(s)
+                    elif button_leave_rect.collidepoint(event.pos):
+                        self.terminate()
                 elif event.type == pygame.MOUSEMOTION:
-                    if (event.pos[0] in range(btn_coords[0], btn_coords[0] * 2) and
-                            event.pos[1] in range(btn_coords[1] * 4, btn_coords[1] * 5)):
-                        self.on_btn = True
+                    if button_restart_rect.collidepoint(event.pos):
+                        self.light_restart = True
                     else:
-                        self.on_btn = False
+                        self.light_restart = False
 
-            if self.on_btn:
-                pygame.draw.rect(screen, pygame.Color(50, 50, 50),
-                                 (WIDTH // 3, HEIGHT // 6 * 4, WIDTH // 3, HEIGHT // 6), 0)
+                    if button_menu_rect.collidepoint(event.pos):
+                        self.light_menu = True
+                    else:
+                        self.light_menu = False
+
+                    if button_leave_rect.collidepoint(event.pos):
+                        self.light_leave = True
+                    else:
+                        self.light_leave = False
+
+            if self.light_restart:
+                pygame.draw.rect(screen, pygame.Color(210, 228, 236),
+                                 button_restart_rect, 0)
             else:
-                pygame.draw.rect(screen, pygame.Color(0, 0, 0),
-                                 (WIDTH // 3, HEIGHT // 6 * 4, WIDTH // 3, HEIGHT // 6), 0)
+                pygame.draw.rect(screen, pygame.Color(153, 192, 212),
+                                 button_restart_rect, 0)
+
+            if self.light_menu:
+                pygame.draw.rect(screen, pygame.Color(210, 228, 236),
+                                 button_menu_rect, 0)
+            else:
+                pygame.draw.rect(screen, pygame.Color(153, 192, 212),
+                                 button_menu_rect, 0)
+
+            if self.light_leave:
+                pygame.draw.rect(screen, pygame.Color(210, 228, 236),
+                                 button_leave_rect, 0)
+            else:
+                pygame.draw.rect(screen, pygame.Color(153, 192, 212),
+                                 button_leave_rect, 0)
+            screen.blit(button_restart_text, (button_restart_rect.x + WIDTH // 28, button_restart_rect.y + 25))
+            screen.blit(button_menu_text, (button_menu_rect.x + WIDTH // 8, button_menu_rect.y + 25))
+            screen.blit(button_leave_text, (button_leave_rect.x + WIDTH // 16, button_leave_rect.y + 25))
             pygame.display.flip()
             clock.tick(FPS)
 
@@ -284,204 +574,19 @@ class End:
         sys.exit()
 
 
-all_sprites = pygame.sprite.Group()
-obstacles = pygame.sprite.Group()
-cones = pygame.sprite.Group()
-ramps = pygame.sprite.Group()
-lanes_y = [int(WIDTH // (1300 / 500)), int(WIDTH // (1300 / 700)), int(WIDTH // (1300 / 900))]
-print("aaa", lanes_y)
+end_scr = End()
+sprites_names = {
+    'ramp': Ramp,
+    'cone': Cone,
+    'obstracle': Obstacle
+}
 
-player = Player(lanes_y,
-                pygame.transform.scale(load_image("player (1).png"), (250 // (1300 / WIDTH), 95 // (900 / HEIGHT))), 5,
-                2, 50, 50)
-all_sprites.add(player)
-if WIDTH != 1300:
-    background_image = pygame.transform.scale(load_image("road.png"), (2600 // (1300 / WIDTH), 600 // (900 / HEIGHT)))
-    city_image = pygame.transform.scale(load_image("city2.png"),
-                                        (int(650 / (650 / WIDTH) * 2), int(450 / (450 / HEIGHT) * 2 // 6)))
-    # city_image = load_image("city2.png")
-    fence_image = pygame.transform.scale(load_image("fence.png"), (2600 // (1300 / WIDTH), 100 // (900 / HEIGHT)))
-else:
-    background_image = load_image("road.png")
-    city_image = load_image("city2.png")
-    fence_image = load_image("fence.png")
-print(city_image.get_width(), city_image.get_height())
-background_x = 0
-background_speed = -15
-city_x = 0
-city_speed = -(WIDTH // (1300 / 9))
-fence_x = 0
-fence_speed = -13
-
-font = pygame.font.Font(None, WIDTH // 26)
-text_color = pygame.Color("red")
-jump = False
-
+tile_width = tile_height = WIDTH // 26
+pygame.init()
+pygame.mixer.init()
+pygame.mixer.music.load("data/7e9f69ea4d60b9a.mp3")
+screen = pygame.display.set_mode((WIDTH, HEIGHT))
+clock = pygame.time.Clock()
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 s = Start()
 Start.start_screen(s)
-
-count_points = 0
-jump = False
-running = True
-count = 0
-count_ramp_gravity = 0
-count_ramp_hits = 0
-
-last_obstacle = 0
-last_cone = 0
-last_ramp = 0
-last_up = 0
-last_mid = 0
-last_down = 0
-on_obstacle = False
-
-lanes = {lanes_y[0]: last_up, lanes_y[1]: last_mid, lanes_y[2]: last_down}
-
-'''sprites_names = {
-    0: Ramp(lane_y),
-    1: Obstacle(lane_y - 50),
-    2: Cone(lane_y - 50)
-}'''
-end_scr = End
-
-while running:
-
-    last_obstacle += 1
-    last_cone += 1
-    last_ramp += 1
-    last_up += 1
-    last_mid += 1
-    last_down += 1
-
-    print("lasr up", last_up)
-
-    if random.randrange(100) < 60:
-        random_obj = random.randint(0, 2)
-        lane_y = random.choice(lanes_y)
-        if (lane_y == lanes_y[0] and last_up > 20) or (lane_y == lanes_y[1] and last_mid > 20) or (
-                lane_y == lanes_y[2] and last_down > 20):
-            if random_obj == 1 and last_obstacle > 30:
-                obstacle = Obstacle(lane_y - WIDTH // 26)
-                all_sprites.add(obstacle)
-                obstacles.add(obstacle)
-                last_obstacle = 0
-            elif random_obj == 2 and last_cone > 40:
-                cone = Cone(lane_y - WIDTH // 13 // 2)
-                all_sprites.add(cone)
-                cones.add(cone)
-                last_cone = 0
-            elif random_obj == 0 and last_ramp > 50:
-                random_obj_ramp = random.randint(0, 1)
-                if random_obj_ramp == 0:
-                    ramp = Ramp(lane_y)
-                    all_sprites.add(ramp)
-                    ramps.add(ramp)
-                    cone = Cone(lane_y - WIDTH // 13 // 2, lane_x=WIDTH + WIDTH // 13 // 2 * 3)
-                    all_sprites.add(cone)
-                    cones.add(cone)
-                    last_cone = 0
-                    last_ramp = 0
-                else:
-                    ramp = Ramp(lane_y)
-                    all_sprites.add(ramp)
-                    ramps.add(ramp)
-                    obstacle = Obstacle(lane_y - WIDTH // 13 // 2, lane_x=WIDTH + WIDTH // 13 // 2 * 3.6)
-                    all_sprites.add(obstacle)
-                    obstacles.add(obstacle)
-                    last_obstacle = 0
-                    last_cone = 0
-            if lane_y == lanes_y[0]:
-                last_up = 0
-            elif lane_y == lanes_y[1]:
-                last_mid = 0
-            elif lane_y == lanes_y[2]:
-                last_down = 0
-
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            running = False
-        elif event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_w and not jump:
-                if player.rect.top > lanes_y[0]:
-                    player.rect.y -= lanes_y[1] - lanes_y[0]
-            elif jump is False and event.key == pygame.K_s:
-                if player.rect.bottom not in range(lanes_y[-2] + 1, lanes_y[-1] + 1):
-                    player.rect.y += lanes_y[1] - lanes_y[0]
-            elif event.key == pygame.K_c and not jump and player.rect.bottom in lanes_y:  # добавить возможность прыгать на трубе.
-                jump = True
-
-    if jump:
-        if count < 1:
-            player.rect.y -= WIDTH // 130 * 11 // 2
-        count += 1
-        if count == 10:
-            jump = False
-            count = 0
-    count_points += 1
-    all_sprites.update()
-
-    background_x += background_speed
-    city_x += city_speed
-    fence_x += fence_speed
-    ramp_hits = pygame.sprite.spritecollide(player, ramps, False, pygame.sprite.collide_mask)
-    if ramp_hits:
-        player.gravity = 0
-        ramp_hits = ramp_hits[0]
-        ramp_top = ramp_hits.rect.top
-        player.rect.bottom -= WIDTH // 260 * 4
-        print(ramp_top, player.rect.bottom)
-    else:
-        player.gravity = 0.5
-
-    hits = pygame.sprite.spritecollide(player, cones, False, pygame.sprite.collide_mask)
-    if hits:
-        e = End()
-        End.end_screen(e)
-        running = False
-
-    print("obstr", player.rect.right)
-
-    if on_obstacle:
-        player.rect.bottom = obstacle_top + 1
-        print(player.rect.left, obstacle_hits.rect.right)
-        if obstacle_hits.rect.right == WIDTH // 13 * 7:
-            on_obstacle = False
-
-    obstacles_hits = pygame.sprite.spritecollide(player, obstacles, False, pygame.sprite.collide_mask)
-    if not on_obstacle and obstacles_hits and player.rect.bottom not in range(obstacles_hits[0].rect.top + 1,
-                                                                              obstacles_hits[0].rect.bottom):
-        print(player.rect.bottom, range(obstacles_hits[0].rect.top + 1, obstacles_hits[0].rect.bottom))
-        e = End()
-        end_scr.end_screen(e)
-        running = False
-    elif obstacles_hits:
-        print(player.rect.bottom, range(obstacles_hits[0].rect.top + 2, obstacles_hits[0].rect.bottom))
-        obstacle_hits = obstacles_hits[0]
-        obstacle_top = obstacle_hits.rect.top
-        player.rect.bottom = obstacle_top
-
-        on_obstacle = True
-
-    screen.fill((0, 0, 0))
-    if background_x <= -WIDTH:
-        background_x = 0
-    if city_x <= -WIDTH:
-        city_x = 0
-
-    if fence_x <= -WIDTH:
-        fence_x = 0
-
-    screen.blit(background_image, (background_x, 300 // (1300 / WIDTH)))
-    screen.blit(city_image, (city_x, 0))
-    screen.blit(fence_image, (fence_x, 200 // (1300 / WIDTH)))
-
-    score_text = font.render(str(count_points // 5), True, text_color)
-    screen.blit(score_text, (WIDTH // 13 * 12, WIDTH // 26))
-
-    clock.tick(FPS + count_points // 1000)
-    print("speed:", FPS + count_points // 1000)
-    all_sprites.draw(screen)
-    pygame.display.flip()
-
-pygame.quit()
