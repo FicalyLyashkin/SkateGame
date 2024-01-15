@@ -7,8 +7,7 @@ import pygame.mixer
 
 WIDTH = 1300
 HEIGHT = WIDTH // 13 * 9
-print(HEIGHT, (650 // (650 / WIDTH), 450 // (450 / HEIGHT)), WIDTH // (1300 / 300))
-FPS = 35
+FPS = 30
 count_points = 0
 jump = True
 lanes_y = [int(WIDTH // (1300 / 500)), int(WIDTH // (1300 / 700)), int(WIDTH // (1300 / 900))]
@@ -17,7 +16,7 @@ obstacles = pygame.sprite.Group()
 cones = pygame.sprite.Group()
 ramps = pygame.sprite.Group()
 last_level = 1
-obj_speed = 15
+obj_speed = 10
 
 
 
@@ -193,11 +192,10 @@ def game(level):
         background_image = load_image("road.png")
         city_image = load_image("city2.png")
         fence_image = load_image("fence.png")
-    print(city_image.get_width(), city_image.get_height())
     background_x = 0
     background_speed = -obj_speed
     city_x = 0
-    city_speed = -(WIDTH // (1300 / 9))
+    city_speed = -1
     fence_x = 0
     fence_speed = -obj_speed + 2
 
@@ -218,6 +216,7 @@ def game(level):
     last_mid = 0
     last_down = 0
     on_obstacle = False
+    #ramp_right = WIDTH
 
     lanes = {lanes_y[0]: last_up, lanes_y[1]: last_mid, lanes_y[2]: last_down}
 
@@ -235,8 +234,6 @@ def game(level):
         last_up += 1
         last_mid += 1
         last_down += 1
-
-        print("lasr up", last_up)
 
         if random.randrange(100) < 60:
             random_obj = random.randint(0, 2)
@@ -314,33 +311,33 @@ def game(level):
             ramp_hits = ramp_hits[0]
             ramp_top = ramp_hits.rect.top
             player.rect.bottom -= WIDTH // 260 * 4
-            print(ramp_top, player.rect.bottom)
         else:
-            player.gravity = 0.5
+            player.gravity = 0.3
+
+        '''try:
+            ramp_right = ramp_hits.rect.right
+        except Exception:
+            pass'''
+
 
         hits = pygame.sprite.spritecollide(player, cones, False, pygame.sprite.collide_mask)
-        if hits:
+        if hits: # and ramp_right - hits[0].rect.left > WIDTH // 13:
             e = End()
             End.end_screen(e)
             running = False
 
-        print("obstr", player.rect.right)
-
         if on_obstacle:
-            player.rect.bottom = obstacle_top + 1
-            print(player.rect.left, obstacle_hits.rect.right)
-            if obstacle_hits.rect.right == WIDTH // 13 * 7:
+            player.rect.bottom = obstacle_top
+            if obstacle_hits.rect.right < player.rect.right:
                 on_obstacle = False
 
         obstacles_hits = pygame.sprite.spritecollide(player, obstacles, False, pygame.sprite.collide_mask)
-        if not on_obstacle and obstacles_hits and player.rect.bottom not in range(obstacles_hits[0].rect.top + 1,
+        if not on_obstacle and obstacles_hits and player.rect.bottom not in range(obstacles_hits[0].rect.top,
                                                                                   obstacles_hits[0].rect.bottom):
-            print(player.rect.bottom, range(obstacles_hits[0].rect.top + 1, obstacles_hits[0].rect.bottom))
             e = End()
             End.end_screen(e)
             running = False
         elif obstacles_hits:
-            print(player.rect.bottom, range(obstacles_hits[0].rect.top + 2, obstacles_hits[0].rect.bottom))
             obstacle_hits = obstacles_hits[0]
             obstacle_top = obstacle_hits.rect.top
             player.rect.bottom = obstacle_top
@@ -363,8 +360,12 @@ def game(level):
         score_text = font.render(str(count_points // 5), True, text_color)
         screen.blit(score_text, (WIDTH // 13 * 12, WIDTH // 26))
 
-        clock.tick(FPS + count_points // 1000)
-        print("speed:", FPS + count_points // 1000)
+        speed = FPS + count_points // 1000
+
+        if speed <= 45:
+            clock.tick(speed)
+        else:
+            clock.tick(FPS)
         all_sprites.draw(screen)
         pygame.display.flip()
 
