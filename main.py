@@ -195,9 +195,9 @@ def game(level):
     background_x = 0
     background_speed = -obj_speed
     city_x = 0
-    city_speed = -1
+    city_speed = -6.5
     fence_x = 0
-    fence_speed = -obj_speed + 2
+    fence_speed = -obj_speed
 
     font = pygame.font.Font(None, WIDTH // 26)
     text_color = pygame.Color("red")
@@ -217,6 +217,7 @@ def game(level):
     last_down = 0
     on_obstacle = False
     #ramp_right = WIDTH
+    road = 0
 
     lanes = {lanes_y[0]: last_up, lanes_y[1]: last_mid, lanes_y[2]: last_down}
 
@@ -312,7 +313,7 @@ def game(level):
             ramp_top = ramp_hits.rect.top
             player.rect.bottom -= WIDTH // 260 * 4
         else:
-            player.gravity = 0.3
+            player.gravity = 0.5
 
         '''try:
             ramp_right = ramp_hits.rect.right
@@ -332,8 +333,7 @@ def game(level):
                 on_obstacle = False
 
         obstacles_hits = pygame.sprite.spritecollide(player, obstacles, False, pygame.sprite.collide_mask)
-        if not on_obstacle and obstacles_hits and player.rect.bottom not in range(obstacles_hits[0].rect.top,
-                                                                                  obstacles_hits[0].rect.bottom):
+        if not on_obstacle and obstacles_hits and player.rect.right - obstacles_hits[0].rect.left == 25:
             e = End()
             End.end_screen(e)
             running = False
@@ -361,6 +361,11 @@ def game(level):
         screen.blit(score_text, (WIDTH // 13 * 12, WIDTH // 26))
 
         speed = FPS + count_points // 1000
+
+        road += 13
+
+        if road % 2600 == 0:
+            print("new road")
 
         if speed <= 45:
             clock.tick(speed)
@@ -415,7 +420,7 @@ class Start:
                     end_scr.terminate()
                 elif event.type == pygame.MOUSEBUTTONDOWN:
                     if button_easy_rect.collidepoint(event.pos):
-                        obj_speed = 15
+                        obj_speed = 13
                         last_level = 1
                         game(1)
                     elif button_medium_rect.collidepoint(event.pos):
