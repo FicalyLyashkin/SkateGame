@@ -206,6 +206,8 @@ def game(level):
     jump = False
     running = True
     count = 0
+    jump_on_ramp = False
+    count_jump_on_ramp = 0
     count_ramp_gravity = 0
     count_ramp_hits = 0
 
@@ -215,6 +217,8 @@ def game(level):
     last_up = 0
     last_mid = 0
     last_down = 0
+    last_ramp_cone = 0
+    last_ramp_obstacle = 0
     on_obstacle = False
     #ramp_right = WIDTH
     road = 0
@@ -235,12 +239,14 @@ def game(level):
         last_up += 1
         last_mid += 1
         last_down += 1
+        last_ramp_cone += 1
+        last_ramp_obstacle += 1
 
         if random.randrange(100) < 60:
             random_obj = random.randint(0, 2)
             lane_y = random.choice(lanes_y)
-            if (lane_y == lanes_y[0] and last_up > 20) or (lane_y == lanes_y[1] and last_mid > 20) or (
-                    lane_y == lanes_y[2] and last_down > 20):
+            if (lane_y == lanes_y[0] and last_up > 30) or (lane_y == lanes_y[1] and last_mid > 30) or (
+                    lane_y == lanes_y[2] and last_down > 30):
                 if random_obj == 1 and last_obstacle > 30:
                     obstacle = Obstacle(lane_y - WIDTH // 26)
                     all_sprites.add(obstacle)
@@ -253,7 +259,7 @@ def game(level):
                     last_cone = 0
                 elif random_obj == 0 and last_ramp > 50:
                     random_obj_ramp = random.randint(0, 1)
-                    if random_obj_ramp == 0:
+                    if random_obj_ramp == 0 and last_ramp_cone > 30:
                         ramp = Ramp(lane_y)
                         all_sprites.add(ramp)
                         ramps.add(ramp)
@@ -262,7 +268,7 @@ def game(level):
                         cones.add(cone)
                         last_cone = 0
                         last_ramp = 0
-                    else:
+                    elif last_ramp_obstacle > 30:
                         ramp = Ramp(lane_y)
                         all_sprites.add(ramp)
                         ramps.add(ramp)
@@ -290,7 +296,7 @@ def game(level):
                 elif jump is False and event.key == pygame.K_s:
                     if player.rect.bottom not in range(lanes_y[-2] + 1, lanes_y[-1] + 1):
                         player.rect.y += lanes_y[1] - lanes_y[0]
-                elif event.key == pygame.K_c and not jump and player.rect.bottom in lanes_y:  # добавить возможность прыгать на трубе.
+                elif event.key == pygame.K_c and not jump and player.rect.bottom in lanes_y: #прыгать на трубе
                     jump = True
 
         if jump:
@@ -300,6 +306,15 @@ def game(level):
             if count == 10:
                 jump = False
                 count = 0
+
+        if jump_on_ramp:
+            if count_jump_on_ramp < 1:
+                player.rect.y -= 30
+            count_jump_on_ramp += 1
+            if count_jump_on_ramp == 10:
+                count_jump_on_ramp = 0
+                jump_on_ramp = False
+
         count_points += 1
         all_sprites.update()
 
@@ -311,7 +326,12 @@ def game(level):
             player.gravity = 0
             ramp_hits = ramp_hits[0]
             ramp_top = ramp_hits.rect.top
-            player.rect.bottom -= WIDTH // 260 * 4
+            print(ramp_hits.rect.right)
+            if ramp_hits.rect.right == 651:
+                print("jump")
+                jump_on_ramp = True
+                pass
+            player.rect.bottom -= 10#WIDTH // 260 * 4
         else:
             player.gravity = 0.5
 
@@ -333,7 +353,7 @@ def game(level):
                 on_obstacle = False
 
         obstacles_hits = pygame.sprite.spritecollide(player, obstacles, False, pygame.sprite.collide_mask)
-        if not on_obstacle and obstacles_hits and player.rect.right - obstacles_hits[0].rect.left == WIDTH / 52:
+        if not on_obstacle and obstacles_hits and player.rect.right - obstacles_hits[0].rect.left in range(WIDTH // 52, WIDTH // 32):
             e = End()
             End.end_screen(e)
             running = False
@@ -414,11 +434,11 @@ class Start:
                         last_level = 1
                         game(1)
                     elif button_medium_rect.collidepoint(event.pos):
-                        obj_speed = 25
+                        obj_speed = 26
                         last_level = 2
                         game(2)
                     elif button_hard_rect.collidepoint(event.pos):
-                        obj_speed = 40
+                        obj_speed = 39
                         last_level = 3
                         game(3)
                 elif event.type == pygame.MOUSEMOTION:
