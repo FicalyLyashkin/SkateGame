@@ -333,7 +333,7 @@ def game(level):
                 on_obstacle = False
 
         obstacles_hits = pygame.sprite.spritecollide(player, obstacles, False, pygame.sprite.collide_mask)
-        if not on_obstacle and obstacles_hits and player.rect.right - obstacles_hits[0].rect.left == 25:
+        if not on_obstacle and obstacles_hits and player.rect.right - obstacles_hits[0].rect.left == WIDTH / 52:
             e = End()
             End.end_screen(e)
             running = False
@@ -360,17 +360,7 @@ def game(level):
         score_text = font.render(str(count_points // 5), True, text_color)
         screen.blit(score_text, (WIDTH // 13 * 12, WIDTH // 26))
 
-        speed = FPS + count_points // 1000
-
-        road += 13
-
-        if road % 2600 == 0:
-            print("new road")
-
-        if speed <= 45:
-            clock.tick(speed)
-        else:
-            clock.tick(FPS)
+        clock.tick(FPS)
         all_sprites.draw(screen)
         pygame.display.flip()
 
