@@ -11,6 +11,8 @@ FPS = 30
 count_points = 0
 jump = True
 lanes_y = [int(WIDTH // (1300 / 500)), int(WIDTH // (1300 / 700)), int(WIDTH // (1300 / 900))]
+obstacle_lanes_y = [x - 50 for x in lanes_y]
+print(obstacle_lanes_y)
 all_sprites = pygame.sprite.Group()
 obstacles = pygame.sprite.Group()
 cones = pygame.sprite.Group()
@@ -296,8 +298,10 @@ def game(level):
                 elif jump is False and event.key == pygame.K_s:
                     if player.rect.bottom not in range(lanes_y[-2] + 1, lanes_y[-1] + 1):
                         player.rect.y += lanes_y[1] - lanes_y[0]
-                elif event.key == pygame.K_c and not jump and player.rect.bottom in lanes_y: #прыгать на трубе
-                    jump = True
+                elif event.key == pygame.K_c and not jump and (player.rect.bottom in lanes_y
+                                                               or player.rect.bottom in obstacle_lanes_y): #прыгать на трубе
+                    print("jump")
+                    jump = Truew
 
         if jump:
             if count < 1:
@@ -326,9 +330,7 @@ def game(level):
             player.gravity = 0
             ramp_hits = ramp_hits[0]
             ramp_top = ramp_hits.rect.top
-            print(ramp_hits.rect.right)
             if ramp_hits.rect.right == 651:
-                print("jump")
                 jump_on_ramp = True
                 pass
             player.rect.bottom -= 10#WIDTH // 260 * 4

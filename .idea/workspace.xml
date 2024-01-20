@@ -4,7 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="011976d9-5710-4b28-9dd0-f96a3467f4a4" name="Changes" comment="сделала скорость постоянной">
+    <list default="true" id="011976d9-5710-4b28-9dd0-f96a3467f4a4" name="Changes" comment="вроде исправила баг с конусом">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
     </list>
@@ -126,7 +126,15 @@
       <option name="project" value="LOCAL" />
       <updated>1705422088116</updated>
     </task>
-    <option name="localTasksCounter" value="6" />
+    <task id="LOCAL-00006" summary="вроде исправила баг с конусом">
+      <option name="closed" value="true" />
+      <created>1705426546209</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1705426546209</updated>
+    </task>
+    <option name="localTasksCounter" value="7" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
@@ -135,14 +143,15 @@
     <MESSAGE value="исправила баг с трубой, поставила лимит на скорость, поменяла скорость города" />
     <MESSAGE value="сделала возможным запрыгнуть на трубу с другого ряда" />
     <MESSAGE value="сделала скорость постоянной" />
-    <option name="LAST_COMMIT_MESSAGE" value="сделала скорость постоянной" />
+    <MESSAGE value="вроде исправила баг с конусом" />
+    <option name="LAST_COMMIT_MESSAGE" value="вроде исправила баг с конусом" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
       <breakpoints>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/main.py</url>
-          <line>302</line>
+          <line>306</line>
           <option name="timeStamp" value="2" />
         </line-breakpoint>
       </breakpoints>
