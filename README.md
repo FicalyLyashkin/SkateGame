@@ -26,5 +26,4 @@
 * **Серебрянный кубок** - за 150+ очков на уровне
 * **Бронзовый кубок** - за 50+ очков на уровне
 
-<image src="/data/achive2.png" alt="Бронзовый кубок">  <image src="/data/achive3.png" alt="Серебрянный кубок">  <image src="/data/achive4.png" alt="Золотой кубок"> 
-<image src="/data/achive5.png" alt="Платиновый кубок">
+<image src="/data/achive5.png">  <image src="/data/achive4.png">  <image src="/data/achive3.png"> <image src="/data/achive2.png">
