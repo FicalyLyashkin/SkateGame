@@ -6,6 +6,7 @@
   <component name="ChangeListManager">
     <list default="true" id="011976d9-5710-4b28-9dd0-f96a3467f4a4" name="Changes" comment="вроде исправила баг с конусом">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/data/statistics.txt" beforeDir="false" afterPath="$PROJECT_DIR$/data/statistics.txt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -145,16 +146,5 @@
     <MESSAGE value="сделала скорость постоянной" />
     <MESSAGE value="вроде исправила баг с конусом" />
     <option name="LAST_COMMIT_MESSAGE" value="вроде исправила баг с конусом" />
-  </component>
-  <component name="XDebuggerManager">
-    <breakpoint-manager>
-      <breakpoints>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/main.py</url>
-          <line>306</line>
-          <option name="timeStamp" value="2" />
-        </line-breakpoint>
-      </breakpoints>
-    </breakpoint-manager>
   </component>
 </project>

@@ -126,6 +126,7 @@ class Player(pygame.sprite.Sprite):
         self.speedy = 0
         self.gravity = 0.5
         self.mask = pygame.mask.from_surface(self.image)
+        self.update_sprite = 0
 
     def cut_sheet(self, sheet, columns, rows):
         self.rect = pygame.Rect(0, 0, sheet.get_width() // columns,
@@ -137,8 +138,10 @@ class Player(pygame.sprite.Sprite):
                     frame_location, self.rect.size)))
 
     def update(self):
-        self.cur_frame = (self.cur_frame + 1) % len(self.frames)
-        self.image = self.frames[self.cur_frame]
+        self.update_sprite += 1
+        if self.update_sprite % 10 == 0:
+            self.cur_frame = (self.cur_frame + 1) % len(self.frames)
+            self.image = self.frames[self.cur_frame]
         if not jump:
             self.speedy += self.gravity
             self.rect.y += self.speedy
@@ -153,36 +156,13 @@ class Player(pygame.sprite.Sprite):
             self.speedy = 0
 
 
-def generate_level(level):
-    for y in range(len(level)):
-        for x in range(len(level[y])):
-            if level[y][x] == '.':
-                pass
-            elif level[y][x] == '*':
-                lane_y = lanes_y[y]
-                cone = Cone(lane_y - WIDTH // 13 // 2)
-                all_sprites.add(cone)
-                cones.add(cone)
-            elif level[y][x] == '-':
-                lane_y = lanes_y[y]
-                obstacle = Obstacle(lane_y - WIDTH // 13 // 2)
-                all_sprites.add(obstacle)
-                obstacles.add(obstacle)
-            elif level[y][x] == "+":
-                lane_y = lanes_y[y]
-                ramp = Ramp(lane_y)
-                all_sprites.add(ramp)
-                ramps.add(ramp)
-
-    return x, y
-
-
 def game(level):
     global jump, FPS, WIDTH, HEIGHT, count_points, obj_speed
+    print(250 // (1300 / WIDTH), 95 // (900 / HEIGHT))
 
     player = Player(lanes_y,
-                    pygame.transform.scale(load_image("player (1).png"), (250 // (1300 / WIDTH), 95 // (900 / HEIGHT))), 5,
-                    2, 50, 50)
+                    pygame.transform.scale(load_image("skater_boy.png"), (200, 50)), 4,
+                    1, 50, 50)
     all_sprites.add(player)
     if WIDTH != 1300:
         background_image = pygame.transform.scale(load_image("road.png"), (2600 // (1300 / WIDTH), 600 // (900 / HEIGHT)))
@@ -219,13 +199,9 @@ def game(level):
     last_up = 0
     last_mid = 0
     last_down = 0
-    last_ramp_cone = 0
-    last_ramp_obstacle = 0
     on_obstacle = False
     #ramp_right = WIDTH
     road = 0
-
-    lanes = {lanes_y[0]: last_up, lanes_y[1]: last_mid, lanes_y[2]: last_down}
 
     '''sprites_names = {
         0: Ramp(lane_y),
@@ -241,8 +217,6 @@ def game(level):
         last_up += 1
         last_mid += 1
         last_down += 1
-        last_ramp_cone += 1
-        last_ramp_obstacle += 1
 
         if random.randrange(100) < 60:
             random_obj = random.randint(0, 2)
@@ -261,7 +235,7 @@ def game(level):
                     last_cone = 0
                 elif random_obj == 0 and last_ramp > 50:
                     random_obj_ramp = random.randint(0, 1)
-                    if random_obj_ramp == 0 and last_ramp_cone > 30:
+                    if random_obj_ramp == 0:
                         ramp = Ramp(lane_y)
                         all_sprites.add(ramp)
                         ramps.add(ramp)
@@ -270,7 +244,7 @@ def game(level):
                         cones.add(cone)
                         last_cone = 0
                         last_ramp = 0
-                    elif last_ramp_obstacle > 30:
+                    else:
                         ramp = Ramp(lane_y)
                         all_sprites.add(ramp)
                         ramps.add(ramp)
@@ -300,8 +274,9 @@ def game(level):
                         player.rect.y += lanes_y[1] - lanes_y[0]
                 elif event.key == pygame.K_c and not jump and (player.rect.bottom in lanes_y
                                                                or player.rect.bottom in obstacle_lanes_y): #прыгать на трубе
-                    print("jump")
-                    jump = Truew
+                    jump = True
+                elif event.key == pygame.K_c:
+                    print(player.rect.bottom, obstacle_lanes_y)
 
         if jump:
             if count < 1:
@@ -335,7 +310,7 @@ def game(level):
                 pass
             player.rect.bottom -= 10#WIDTH // 260 * 4
         else:
-            player.gravity = 0.5
+            player.gravity = 0.6
 
         '''try:
             ramp_right = ramp_hits.rect.right
@@ -350,6 +325,7 @@ def game(level):
             running = False
 
         if on_obstacle:
+            print(jump)
             player.rect.bottom = obstacle_top
             if obstacle_hits.rect.right < player.rect.right:
                 on_obstacle = False
