@@ -9,7 +9,8 @@ WIDTH = 1300
 HEIGHT = WIDTH // 13 * 9
 FPS = 30
 count_points = 0
-jump = True
+jump = False
+jump_on_ramp = False
 lanes_y = [int(WIDTH // (1300 / 500)), int(WIDTH // (1300 / 700)), int(WIDTH // (1300 / 900))]
 obstacle_lanes_y = [x - 50 for x in lanes_y]
 print(obstacle_lanes_y)
@@ -139,7 +140,10 @@ class Player(pygame.sprite.Sprite):
 
     def update(self):
         self.update_sprite += 1
-        if self.update_sprite % 10 == 0:
+        if jump or jump_on_ramp:
+            self.cur_frame = (self.cur_frame + 1) % len(self.frames)
+            self.image = self.frames[0]
+        elif self.update_sprite % 15 == 0:
             self.cur_frame = (self.cur_frame + 1) % len(self.frames)
             self.image = self.frames[self.cur_frame]
         if not jump:
@@ -157,7 +161,7 @@ class Player(pygame.sprite.Sprite):
 
 
 def game(level):
-    global jump, FPS, WIDTH, HEIGHT, count_points, obj_speed
+    global jump, FPS, WIDTH, HEIGHT, count_points, obj_speed, jump_on_ramp
     print(250 // (1300 / WIDTH), 95 // (900 / HEIGHT))
 
     player = Player(lanes_y,
@@ -312,26 +316,22 @@ def game(level):
         else:
             player.gravity = 0.6
 
-        '''try:
-            ramp_right = ramp_hits.rect.right
-        except Exception:
-            pass'''
-
 
         hits = pygame.sprite.spritecollide(player, cones, False, pygame.sprite.collide_mask)
-        if hits: # and ramp_right - hits[0].rect.left > WIDTH // 13:
+        if hits:
             e = End()
             End.end_screen(e)
             running = False
 
         if on_obstacle:
-            print(jump)
             player.rect.bottom = obstacle_top
             if obstacle_hits.rect.right < player.rect.right:
                 on_obstacle = False
 
         obstacles_hits = pygame.sprite.spritecollide(player, obstacles, False, pygame.sprite.collide_mask)
-        if not on_obstacle and obstacles_hits and player.rect.right - obstacles_hits[0].rect.left in range(WIDTH // 52, WIDTH // 32):
+        if obstacles_hits:
+            print(player.rect.right - obstacles_hits[0].rect.left in range(0, WIDTH // 32))
+        if not on_obstacle and obstacles_hits and player.rect.right - obstacles_hits[0].rect.left in range(0, WIDTH // 32):
             e = End()
             End.end_screen(e)
             running = False
@@ -339,7 +339,6 @@ def game(level):
             obstacle_hits = obstacles_hits[0]
             obstacle_top = obstacle_hits.rect.top
             player.rect.bottom = obstacle_top
-
             on_obstacle = True
 
         screen.fill((0, 0, 0))
