@@ -1,3 +1,5 @@
 [Statistics]
-max_count_points = 323
+max_easy_points = 205
+max_medium_points = 12
+max_hard_points = 124
 

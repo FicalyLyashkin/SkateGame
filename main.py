@@ -13,7 +13,7 @@ jump = False
 jump_on_ramp = False
 lanes_y = [int(WIDTH // (1300 / 500)), int(WIDTH // (1300 / 700)), int(WIDTH // (1300 / 900))]
 obstacle_lanes_y = [x - 50 for x in lanes_y]
-print(obstacle_lanes_y)
+levels = {1: "max_easy_points", 2: "max_medium_points", 3: "max_hard_points"}
 all_sprites = pygame.sprite.Group()
 obstacles = pygame.sprite.Group()
 cones = pygame.sprite.Group()
@@ -32,28 +32,19 @@ def load_image(name, colorkey=None):
     return image
 
 
-def load_level(filename):
-    filename = "data/" + filename
-    with open(filename, 'r') as mapFile:
-        level_map = [line.strip() for line in mapFile]
-    max_width = max(map(len, level_map))
-    return list(map(lambda x: x.ljust(max_width, '.'), level_map))
-
-
-def write_statistics(filename, points):
-    print(load_statistics(filename), points)
-    if int(load_statistics(filename)) < points:
+def write_statistics(filename, points, level):
+    if int(load_statistics(filename, level)) < points:
         config = configparser.ConfigParser()
         config.read("data/" + filename)
-        config.set("Statistics", "max_count_points", str(points))
+        config.set("Statistics", levels[level], str(points))
         with open("data/" + filename, 'w') as f:
             config.write(f)
 
 
-def load_statistics(filename):
+def load_statistics(filename, level):
     config = configparser.ConfigParser()
     config.read("data/" + filename)
-    past_res = config["Statistics"]["max_count_points"]
+    past_res = config["Statistics"][levels[level]]
     return past_res
 
 
@@ -267,7 +258,7 @@ def game(level):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 e = End()
-                End.end_screen(e)
+                End.end_screen(e, level)
                 running = False
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_w and not jump:
@@ -320,7 +311,7 @@ def game(level):
         hits = pygame.sprite.spritecollide(player, cones, False, pygame.sprite.collide_mask)
         if hits:
             e = End()
-            End.end_screen(e)
+            End.end_screen(e, level)
             running = False
 
         if on_obstacle:
@@ -329,11 +320,9 @@ def game(level):
                 on_obstacle = False
 
         obstacles_hits = pygame.sprite.spritecollide(player, obstacles, False, pygame.sprite.collide_mask)
-        if obstacles_hits:
-            print(player.rect.right - obstacles_hits[0].rect.left in range(0, WIDTH // 32))
         if not on_obstacle and obstacles_hits and player.rect.right - obstacles_hits[0].rect.left in range(0, WIDTH // 32):
             e = End()
-            End.end_screen(e)
+            End.end_screen(e, level)
             running = False
         elif obstacles_hits:
             obstacle_hits = obstacles_hits[0]
@@ -372,22 +361,50 @@ class Start:
 
     def start_screen(self):
         global last_level, obj_speed, FPS
+        records = dict()
+        for x in range(1, 4):
+            records[x] = load_statistics('statistics.txt', x)
         intro_text = ["НАЗВАНИЕ ИГРЫ", "",
                       "Правила игры", "",
-                      f"Рекорд: {load_statistics('statistics.txt')} очк"]
+                      "Рекорды:", "",
+                      f"easy: {records[1]}",
+                      f"medium: {records[2]}",
+                      f"hard: {records[3]}"]
 
         fon = pygame.transform.scale(load_image('city.png'), (WIDTH, HEIGHT))
         screen.blit(fon, (0, 0))
         font = pygame.font.Font(None, WIDTH // 26)
         text_coord = WIDTH // 26
+        k = 0
         for line in intro_text:
             string_rendered = font.render(line, 1, pygame.Color('black'))
             intro_rect = string_rendered.get_rect()
             text_coord += 1
+            if "easy"in line or "medium" in line or "hard" in line:
+                k += 1
+                if int(records[k]) > 50:
+                    ach = pygame.transform.scale(load_image('achive2.png'), (20, 20))
+                elif int(records[k]) > 150:
+                    ach = pygame.transform.scale(load_image('achive3.png'), (20, 20))
+                elif int(records[k]) > 350:
+                    ach = pygame.transform.scale(load_image('achive4.png'), (20, 20))
+                elif int(records[k]) > 650:
+                    ach = pygame.transform.scale(load_image('achive5.png'), (20, 20))
+                else:
+                    ach = pygame.transform.scale(load_image('achive1.png'), (20, 20))
+                screen.blit(ach, ((15, text_coord + 8)))
             intro_rect.top = text_coord
             intro_rect.x = WIDTH // 26
             text_coord += intro_rect.height
             screen.blit(string_rendered, intro_rect)
+        string_rendered = font.render("ДОСТИЖЕНИЯ:", 1, pygame.Color('black'))
+        intro_rect = string_rendered.get_rect()
+        intro_rect.top = WIDTH / 10 * 6
+        intro_rect.x = WIDTH // 26
+        text_coord += intro_rect.height
+        screen.blit(string_rendered, intro_rect)
+
+
         button_easy_rect = pygame.Rect(WIDTH // 3, (HEIGHT // 6 * 4) - 250, WIDTH // 3, HEIGHT // 10)
         button_medium_rect = pygame.Rect(WIDTH // 3, (HEIGHT // 6 * 4) - 150, WIDTH // 3, HEIGHT // 10)
         button_hard_rect = pygame.Rect(WIDTH // 3, (HEIGHT // 6 * 4) - 50, WIDTH // 3, HEIGHT // 10)
@@ -471,12 +488,12 @@ class End:
         self.light_menu = False
         self.light_leave = False
 
-    def end_screen(self):
+    def end_screen(self, level):
         global last_level
         intro_text = ["ВЫ ПРОИГРАЛИ", "",
                       "Счёт: {}".format(count_points // 5)]
 
-        write_statistics("statistics.txt", count_points // 5)
+        write_statistics("statistics.txt", count_points // 5, level)
         pygame.mixer.music.stop()
         fon = pygame.transform.scale(load_image('city.png'), (WIDTH, HEIGHT))
         screen.blit(fon, (0, 0))
