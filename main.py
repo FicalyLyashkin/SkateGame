@@ -388,8 +388,10 @@ class Start:
         for x in range(1, 4):
             records[x] = load_statistics('statistics.txt', x)
 
-        intro_text = ["НАЗВАНИЕ ИГРЫ", "",
-                      "Правила игры", "",
+        intro_text = ["SCATE GAME", "",
+                      "W - Переход на дорожку выше",
+                      "S - Переход на дорожку ниже",
+                      "С - Прыжок", "",
                       "Рекорды:", "",
                       f"Easy: {records[1]}",
                       f"Medium: {records[2]}",
