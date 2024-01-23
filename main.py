@@ -26,6 +26,7 @@ ramps = pygame.sprite.Group()
 
 last_level = 1
 obj_speed = 10
+ramp_y = 10
 
 
 def load_image(name, colorkey=None):
@@ -46,6 +47,7 @@ def write_statistics(filename, points, level):
         config.set("Statistics", levels[level], str(points))
         with open("data/" + filename, 'w') as f:
             config.write(f)
+
 
 def load_statistics(filename, level):
     # Получает сведения о рекордах
@@ -98,7 +100,7 @@ class Cone(pygame.sprite.Sprite):
 class Ramp(pygame.sprite.Sprite):
     # Спрайт рампы
     image = load_image("ramp.png")
-    image = pygame.transform.scale(image, (WIDTH // 26 * 3.4, WIDTH // 26 * 1.8))
+    image = pygame.transform.scale(image, (WIDTH // 26 * 1.8, WIDTH // 26 * 1.8))
 
     def __init__(self, lane_y):
         pygame.sprite.Sprite.__init__(self)
@@ -165,32 +167,24 @@ class Player(pygame.sprite.Sprite):
 
 def game(level):
     # Основной игровой процесс
-    global jump, FPS, WIDTH, HEIGHT, count_points, obj_speed, jump_on_ramp
+    global jump, FPS, WIDTH, HEIGHT, count_points, obj_speed, jump_on_ramp, ramp_y
 
     player = Player(lanes_y,
-                    pygame.transform.scale(load_image("skater_boy.png"), (WIDTH // 6.5, WIDTH // 26)),
+                    pygame.transform.scale(load_image("skater_boy.png"), (200, 50)),
                     4, 1)
     all_sprites.add(player)
 
-    if WIDTH != 1300:
-        background_image = pygame.transform.scale(load_image("road.png"),
-                                                  (2600 // (1300 / WIDTH), 600 // (900 / HEIGHT)))
-        city_image = pygame.transform.scale(load_image("city2.png"),
-                                            (int(650 / (650 / WIDTH) * 2), int(450 / (450 / HEIGHT) * 2 // 6)))
-        fence_image = pygame.transform.scale(load_image("fence.png"), (2600 // (1300 / WIDTH), 100 // (900 / HEIGHT)))
-    else:
-        background_image = load_image("road.png")
-        city_image = load_image("city2.png")
-        fence_image = load_image("fence.png")
-
     background_x = 0
     background_speed = -obj_speed
+    background_image = load_image("road.png")
 
     city_x = 0
     city_speed = -6.5
+    city_image = load_image("city2.png")
 
     fence_x = 0
     fence_speed = -obj_speed
+    fence_image = load_image("fence.png")
 
     font = pygame.font.Font(None, WIDTH // 26)
     text_color = pygame.Color("red")
@@ -249,7 +243,7 @@ def game(level):
                         ramp = Ramp(lane_y)
                         all_sprites.add(ramp)
                         ramps.add(ramp)
-                        cone = Cone(lane_y - WIDTH // 13 // 2, lane_x=WIDTH + WIDTH // 13 // 2 * 3)
+                        cone = Cone(lane_y - WIDTH // 13 // 2, lane_x=WIDTH + WIDTH // 13 // 2 * 1.5)
                         all_sprites.add(cone)
                         cones.add(cone)
                         last_cone = 0
@@ -259,7 +253,7 @@ def game(level):
                         ramp = Ramp(lane_y)
                         all_sprites.add(ramp)
                         ramps.add(ramp)
-                        obstacle = Obstacle(lane_y - WIDTH // 13 // 2, lane_x=WIDTH + WIDTH // 13 // 2 * 3.6)
+                        obstacle = Obstacle(lane_y - WIDTH // 13 // 2, lane_x=WIDTH + WIDTH // 13 // 2 * 1.9)
                         all_sprites.add(obstacle)
                         obstacles.add(obstacle)
                         last_obstacle = 0
@@ -305,7 +299,7 @@ def game(level):
 
         if jump_on_ramp:
             if count_jump_on_ramp < 1:
-                player.rect.y -= WIDTH // 52
+                player.rect.y -= 30
             count_jump_on_ramp += 1
 
             if count_jump_on_ramp == 10:
@@ -324,10 +318,10 @@ def game(level):
             player.gravity = 0
             ramp_hits = ramp_hits[0]
 
-            if ramp_hits.rect.right in range(WIDTH // 2 - 5, WIDTH // 2 + 5):
+            if ramp_hits.rect.right == 651:
                 jump_on_ramp = True
                 pass
-            player.rect.bottom -= WIDTH // 130
+            player.rect.bottom -= ramp_y
 
         else:
             player.gravity = 0.6
@@ -389,7 +383,7 @@ class Start:
         self.light_hard = False
 
     def start_screen(self):
-        global obj_speed, FPS
+        global obj_speed, FPS, ramp_y
 
         records = dict()
         for x in range(1, 4):
@@ -409,7 +403,6 @@ class Start:
         font = pygame.font.Font(None, WIDTH // 26)
         text_coord = WIDTH // 26
         k = 0
-        w = WIDTH // 65
 
         for line in intro_text:
             string_rendered = font.render(line, 1, pygame.Color('black'))
@@ -419,25 +412,25 @@ class Start:
             if "Easy" in line or "Medium" in line or "Hard" in line:
                 k += 1
                 if int(records[k]) > 50:
-                    ach = pygame.transform.scale(load_image('achive2.png'), (w, w))
+                    ach = pygame.transform.scale(load_image('achive2.png'), (20, 20))
                 elif int(records[k]) > 150:
-                    ach = pygame.transform.scale(load_image('achive3.png'), (w, w))
+                    ach = pygame.transform.scale(load_image('achive3.png'), (20, 20))
                 elif int(records[k]) > 350:
-                    ach = pygame.transform.scale(load_image('achive4.png'), (w, w))
+                    ach = pygame.transform.scale(load_image('achive4.png'), (20, 20))
                 elif int(records[k]) > 650:
-                    ach = pygame.transform.scale(load_image('achive5.png'), (w, w))
+                    ach = pygame.transform.scale(load_image('achive5.png'), (20, 20))
                 else:
-                    ach = pygame.transform.scale(load_image('achive1.png'), (w, w))
-                screen.blit(ach, ((15, text_coord + WIDTH // 162.5)))
+                    ach = pygame.transform.scale(load_image('achive1.png'), (20, 20))
+                screen.blit(ach, ((15, text_coord + 8)))
 
             intro_rect.top = text_coord
             intro_rect.x = WIDTH // 26
             text_coord += intro_rect.height
             screen.blit(string_rendered, intro_rect)
 
-        button_easy_rect = pygame.Rect(WIDTH // 3, (HEIGHT // 6 * 4) - WIDTH // 26 * 5, WIDTH // 3, HEIGHT // 10)
-        button_medium_rect = pygame.Rect(WIDTH // 3, (HEIGHT // 6 * 4) - WIDTH // 26 * 3, WIDTH // 3, HEIGHT // 10)
-        button_hard_rect = pygame.Rect(WIDTH // 3, (HEIGHT // 6 * 4) - WIDTH // 26, WIDTH // 3, HEIGHT // 10)
+        button_easy_rect = pygame.Rect(WIDTH // 3, (HEIGHT // 6 * 4) - 250, WIDTH // 3, HEIGHT // 10)
+        button_medium_rect = pygame.Rect(WIDTH // 3, (HEIGHT // 6 * 4) - 150, WIDTH // 3, HEIGHT // 10)
+        button_hard_rect = pygame.Rect(WIDTH // 3, (HEIGHT // 6 * 4) - 50, WIDTH // 3, HEIGHT // 10)
 
         button_easy_text = font.render("Easy", True, pygame.Color('black'))
         button_medium_text = font.render("Medium", True, pygame.Color('black'))
@@ -447,6 +440,10 @@ class Start:
         pygame.draw.rect(screen, pygame.Color(153, 192, 212), button_medium_rect, 0)
         pygame.draw.rect(screen, pygame.Color(153, 192, 212), button_hard_rect, 0)
 
+        screen.blit(button_easy_text, (button_easy_rect.x + WIDTH // 8, button_easy_rect.y + 25))
+        screen.blit(button_medium_text, (button_medium_rect.x + WIDTH // 8, button_medium_rect.y + 25))
+        screen.blit(button_hard_text, (button_hard_rect.x + WIDTH // 8, button_hard_rect.y + 25))
+
         while True:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -455,12 +452,15 @@ class Start:
                 elif event.type == pygame.MOUSEBUTTONDOWN:
                     if button_easy_rect.collidepoint(event.pos):
                         obj_speed = 13
+                        ramp_y = 10
                         game(1)
                     elif button_medium_rect.collidepoint(event.pos):
                         obj_speed = 26
+                        ramp_y = 20
                         game(2)
                     elif button_hard_rect.collidepoint(event.pos):
                         obj_speed = 39
+                        ramp_y = 30
                         game(3)
 
                 elif event.type == pygame.MOUSEMOTION:
@@ -500,9 +500,9 @@ class Start:
                 pygame.draw.rect(screen, pygame.Color(153, 192, 212),
                                  button_hard_rect, 0)
 
-            screen.blit(button_easy_text, (button_easy_rect.x + WIDTH // 8, button_easy_rect.y + WIDTH // 52))
-            screen.blit(button_medium_text, (button_medium_rect.x + WIDTH // 8, button_medium_rect.y + WIDTH // 52))
-            screen.blit(button_hard_text, (button_hard_rect.x + WIDTH // 8, button_hard_rect.y + WIDTH // 52))
+            screen.blit(button_easy_text, (button_easy_rect.x + WIDTH // 8, button_easy_rect.y + 25))
+            screen.blit(button_medium_text, (button_medium_rect.x + WIDTH // 8, button_medium_rect.y + 25))
+            screen.blit(button_hard_text, (button_hard_rect.x + WIDTH // 8, button_hard_rect.y + 25))
 
             pygame.display.flip()
 
@@ -548,9 +548,9 @@ class End:
             text_coord += intro_rect.height
             screen.blit(string_rendered, intro_rect)
 
-        button_restart_rect = pygame.Rect(WIDTH // 3, (HEIGHT // 6 * 4) - WIDTH // 26 * 5, WIDTH // 3, HEIGHT // 10)
-        button_menu_rect = pygame.Rect(WIDTH // 3, (HEIGHT // 6 * 4) - WIDTH // 26 * 3, WIDTH // 3, HEIGHT // 10)
-        button_leave_rect = pygame.Rect(WIDTH // 3, (HEIGHT // 6 * 4) - WIDTH // 26, WIDTH // 3, HEIGHT // 10)
+        button_restart_rect = pygame.Rect(WIDTH // 3, (HEIGHT // 6 * 4) - 250, WIDTH // 3, HEIGHT // 10)
+        button_menu_rect = pygame.Rect(WIDTH // 3, (HEIGHT // 6 * 4) - 150, WIDTH // 3, HEIGHT // 10)
+        button_leave_rect = pygame.Rect(WIDTH // 3, (HEIGHT // 6 * 4) - 50, WIDTH // 3, HEIGHT // 10)
 
         button_restart_text = font_buttons.render("Попробовать заново", True, pygame.Color('black'))
         button_menu_text = font_buttons.render("Меню", True, pygame.Color('black'))
@@ -559,6 +559,10 @@ class End:
         pygame.draw.rect(screen, pygame.Color(153, 192, 212), button_restart_rect, 0)
         pygame.draw.rect(screen, pygame.Color(153, 192, 212), button_menu_rect, 0)
         pygame.draw.rect(screen, pygame.Color(153, 192, 212), button_leave_rect, 0)
+
+        screen.blit(button_restart_text, (button_restart_rect.x + WIDTH // 28, button_restart_rect.y + 25))
+        screen.blit(button_menu_text, (button_menu_rect.x + WIDTH // 8, button_menu_rect.y + 25))
+        screen.blit(button_leave_text, (button_leave_rect.x + WIDTH // 16, button_leave_rect.y + 25))
 
         while True:
             for event in pygame.event.get():
@@ -613,9 +617,9 @@ class End:
                 pygame.draw.rect(screen, pygame.Color(153, 192, 212),
                                  button_leave_rect, 0)
 
-            screen.blit(button_restart_text, (button_restart_rect.x + WIDTH // 28, button_restart_rect.y + WIDTH // 52))
-            screen.blit(button_menu_text, (button_menu_rect.x + WIDTH // 8, button_menu_rect.y + WIDTH // 52))
-            screen.blit(button_leave_text, (button_leave_rect.x + WIDTH // 16, button_leave_rect.y + WIDTH // 52))
+            screen.blit(button_restart_text, (button_restart_rect.x + WIDTH // 28, button_restart_rect.y + 25))
+            screen.blit(button_menu_text, (button_menu_rect.x + WIDTH // 8, button_menu_rect.y + 25))
+            screen.blit(button_leave_text, (button_leave_rect.x + WIDTH // 16, button_leave_rect.y + 25))
 
             pygame.display.flip()
 
@@ -630,3 +634,4 @@ pygame.mixer.music.load("data/7e9f69ea4d60b9a.mp3")
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 clock = pygame.time.Clock()
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
+
